@@ -27,7 +27,7 @@ server.get("/", async (request, reply) => {
   return { message: "Hello, Fastify!" };
 });
 
-server.get("/create-crawl-data", async (request, reply) => {
+server.post("/create-crawl-data", async (request, reply) => {
   const { siteUrl, userId, numberOfCrawlPage } = request.body as {
     siteUrl: string; // クロールするサイトのURL
     userId: string; // ユーザーID
@@ -36,8 +36,12 @@ server.get("/create-crawl-data", async (request, reply) => {
 
   try {
     // クローラーを実行してVueFlowデータを生成
-    await CrawlAndCreateVueFlowFile();
-    return { message: "Crawl data created successfully!" };
+    const data = await CrawlAndCreateVueFlowFile(
+      siteUrl,
+      userId,
+      numberOfCrawlPage
+    );
+    return data;
   } catch (error) {
     server.log.error(error);
     reply.status(500).send({ error: "Failed to create crawl data." });
@@ -53,7 +57,7 @@ try {
       server.log.error(error);
       process.exit(1);
     }
-    server.log.info(`Server listening at ${address}`);
+    console.log(`Server listening at ${address}`);
   });
 } catch (err) {
   server.log.error(err);

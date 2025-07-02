@@ -4,8 +4,9 @@
   "main": "src/index.ts",
   "type": "module",
   "scripts": {
-    "build": "tsc",
-    "start": "tsx src/server.ts",
+    "build": "tsc -p .",
+    "build:live": "nodemon --watch 'src/**/*.ts' --exec \"ts-node\" src/server.ts",
+    "start": "npm run build:live",
     "dev": "tsx src/crawler/index.ts",
     "watch": "tsc --watch",
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -25,6 +26,8 @@
     "@fastify/multipart": "^9.0.3",
     "crawlee": "^3.13.9",
     "fastify": "^5.4.0",
-    "playwright": "^1.53.2"
+    "nodemon": "^3.1.10",
+    "playwright": "^1.53.2",
+    "ts-node": "^10.9.2"
   }
 }
