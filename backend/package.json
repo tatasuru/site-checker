@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "dev": "tsx src/index.ts",
+    "start": "tsx src/server.ts",
+    "dev": "tsx src/crawler/index.ts",
     "watch": "tsc --watch",
     "test": "echo \"Error: no test specified\" && exit 1",
     "typecheck": "tsc --noEmit"
@@ -20,7 +21,10 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
+    "@fastify/cors": "^11.0.1",
+    "@fastify/multipart": "^9.0.3",
     "crawlee": "^3.13.9",
+    "fastify": "^5.4.0",
     "playwright": "^1.53.2"
   }
 }
