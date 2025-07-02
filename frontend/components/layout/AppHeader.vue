@@ -69,7 +69,7 @@ onMounted(async () => {
     />
 
     <NuxtLink v-if="route.path === '/'" to="/">
-      <h1 class="gradient-text text-xl font-bold md:text-2xl">Site Checker</h1>
+      <h1 class="gradient-text text-xl font-bold md:text-2xl">SITE CHECKER</h1>
     </NuxtLink>
 
     <!-- left -->

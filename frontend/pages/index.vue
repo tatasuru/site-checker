@@ -27,7 +27,7 @@ const login = async (providerName: "google" | "github") => {
   <div class="flex h-[calc(100vh-4rem)] items-center justify-center">
     <Card class="w-full md:max-w-xl">
       <CardHeader>
-        <CardTitle>Site Checker</CardTitle>
+        <CardTitle>SITE CHECKER</CardTitle>
         <CardDescription>ログインしてください</CardDescription>
       </CardHeader>
       <CardContent>

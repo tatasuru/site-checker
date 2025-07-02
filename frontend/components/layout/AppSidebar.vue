@@ -37,7 +37,7 @@ const isActive = (url: string) => {
         v-if="sidebarStore.isSidebarOpen"
         class="gradient-text overflow-hidden text-2xl font-bold whitespace-nowrap"
       >
-        Site Checker
+        SITE CHECKER
       </span>
     </SidebarHeader>
     <SidebarContent>
@@ -48,9 +48,9 @@ const isActive = (url: string) => {
             <SidebarMenuItem v-for="item in items" :key="item.title">
               <SidebarMenuButton
                 asChild
-                class="hover:bg-purple/20 hover:text-purple focus:bg-purple/20 focus:text-purple active:bg-purple/20 active:text-purple"
+                class="hover:bg-green/20 hover:text-green focus:bg-green/20 focus:text-green active:bg-green/20 active:text-green"
                 :class="{
-                  'bg-purple/20 text-purple': isActive(item.url),
+                  'bg-green/20 text-green': isActive(item.url),
                 }"
               >
                 <NuxtLink :to="item.url">
