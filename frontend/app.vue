@@ -12,20 +12,20 @@ watchEffect(() => {
 
   useHead({
     title: route.meta.title
-      ? `${route.meta.title} - Feed Forward`
-      : "Feed Forward",
+      ? `${route.meta.title} - Site Checker`
+      : "Site Checker",
     meta: [
       {
         name: "description",
-        content: String(route.meta.description ?? "Feed Forwardのページです"),
+        content: String(route.meta.description ?? "Site Checkerのページです"),
       },
       {
         property: "og:title",
-        content: String(route.meta.ogTitle ?? "Feed Forward"),
+        content: String(route.meta.ogTitle ?? "Site Checker"),
       },
       {
         property: "og:description",
-        content: String(route.meta.ogDescription ?? "Feed Forwardのページです"),
+        content: String(route.meta.ogDescription ?? "Site Checkerのページです"),
       },
       {
         property: "og:image",
@@ -41,11 +41,11 @@ watchEffect(() => {
       },
       {
         name: "twitter:title",
-        content: String(route.meta.ogTitle ?? "Feed Forward"),
+        content: String(route.meta.ogTitle ?? "Site Checker"),
       },
       {
         name: "twitter:description",
-        content: String(route.meta.ogDescription ?? "Feed Forwardのページです"),
+        content: String(route.meta.ogDescription ?? "Site Checkerのページです"),
       },
     ],
   });

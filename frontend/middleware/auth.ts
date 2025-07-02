@@ -28,10 +28,11 @@ export default defineNuxtRouteMiddleware(async (to, _from) => {
         return await navigateTo("/login");
       }
 
+      const profile = data as Profile;
       store.setProfile({
-        id: data.id,
-        name: data.name || "",
-        avatar_url: data.avatar_url || "",
+        id: profile.id,
+        name: profile.name || "",
+        avatar_url: profile.avatar_url || "",
       });
     } catch (err) {
       console.error("Exception in auth middleware:", err);

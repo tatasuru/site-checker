@@ -6,25 +6,27 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   ssr: true,
 
-  image: {
-    dir: "assets/images",
-  },
-
   modules: [
+    "@nuxt/image",
+    "@nuxtjs/supabase",
     "@nuxt/eslint",
     "@nuxt/fonts",
     "@nuxt/icon",
-    "@nuxt/image",
     "@nuxt/scripts",
     "@nuxt/test-utils",
     "shadcn-nuxt",
-    "@nuxtjs/supabase",
     "@pinia/nuxt",
     "@vueuse/nuxt",
     "@nuxtjs/color-mode",
   ],
 
+  image: {
+    dirs: ["assets/images", "public"],
+    // provider: "none",
+  },
+
   css: ["~/assets/css/tailwind.css"],
+
   vite: {
     plugins: [tailwindcss()],
   },

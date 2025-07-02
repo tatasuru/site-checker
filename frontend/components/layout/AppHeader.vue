@@ -26,17 +26,6 @@ const signOutWithGoogle = async () => {
 const toggleSidebar = () => {
   sidebarStore.toggleSidebar();
 };
-
-watch(
-  () => store.profile,
-  (profile) => {
-    if (profile) {
-      store.setProfile(profile);
-    } else {
-      store.clearProfile();
-    }
-  },
-);
 </script>
 
 <template>
