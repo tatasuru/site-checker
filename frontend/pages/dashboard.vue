@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useForm } from "vee-validate";
 import { toTypedSchema } from "@vee-validate/zod";
 import * as z from "zod";
 import { toast } from "vue-sonner";
@@ -6,13 +7,12 @@ import { toast } from "vue-sonner";
 const config = useRuntimeConfig();
 const route = useRoute();
 const router = useRouter();
-const client = useSupabaseClient();
+const supabase = useSupabaseClient();
 const user = useSupabaseUser();
-const siteUrl = ref<string>("");
-const numberOfCrawlPage = ref<number>(10);
 const errorMessage = ref<string | null>(null);
 const isLoading = ref<boolean>(false);
 const CRAWL_API_URL = config.public.crawlApiUrl || "http://localhost:8080";
+const crawlResult = ref<any>(null);
 
 definePageMeta({
   middleware: "auth",
@@ -36,11 +36,18 @@ const formSchema = toTypedSchema(
         required_error: "クロール数を入力してください",
         invalid_type_error: "数値を入力してください",
       })
-      .min(1, "0以上の数値を入力してください"),
+      .min(1, "1以上の数値を入力してください"),
   }),
 );
 
-const onCrawlSubmit = async () => {
+const form = useForm({
+  validationSchema: formSchema,
+});
+
+/************************************************
+ * Submit handler for the crawl form
+ *************************************************/
+const onSubmit = form.handleSubmit(async (values) => {
   if (!user.value?.id) {
     errorMessage.value = "User not authenticated";
     return;
@@ -58,9 +65,9 @@ const onCrawlSubmit = async () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        siteUrl: new URL(siteUrl.value).origin + "/",
+        siteUrl: new URL(values.crawlUrl).origin + "/",
         userId: user.value?.id,
-        numberOfCrawlPage: String(numberOfCrawlPage.value),
+        numberOfCrawlPage: String(values.numberOfCrawlPage),
       }),
     });
 
@@ -71,11 +78,11 @@ const onCrawlSubmit = async () => {
     setTimeout(async () => {
       // Reset form
       isLoading.value = false;
-      siteUrl.value = "";
-      // await getDataFromSupabase();
 
       // Show success toast
       toast.success("サイトマップ作成リクエスト成功");
+
+      crawlResult.value = await response.json();
     }, 2000);
   } catch (error) {
     console.error("Crawling failed:", error);
@@ -88,67 +95,65 @@ const onCrawlSubmit = async () => {
       "サイトマップ作成リクエストに失敗しました。再度お試しください。",
     );
   }
-};
+});
 </script>
 
 <template>
-  <div class="mt-8 flex flex-col items-center justify-center p-4">
-    <Form
-      class="mx-auto flex max-w-md flex-col gap-8"
-      :validation-schema="formSchema"
-      @submit="onCrawlSubmit"
-    >
-      <FormField v-slot="{ componentField }" name="crawlUrl">
-        <FormItem>
-          <FormLabel>クロール対象URL</FormLabel>
-          <FormControl>
-            <Input
-              v-bind="componentField"
-              v-model="siteUrl"
-              type="text"
-              placeholder="https://example.com"
-            />
-          </FormControl>
-          <FormDescription class="dark:text-white">
-            サイトマップを作成するためのURLを入力してください。<br />
-            <span class="text-[0.8rem]"
-              >※クロール対象URLは同じURLが既にクロールされていないか確認してください。</span
-            ><br />
-            <span class="text-[0.8rem]"
-              >※クロールは入力していただいたURLのトップページから開始いたします。</span
-            >
-          </FormDescription>
-          <FormMessage />
-        </FormItem>
-      </FormField>
+  <div id="dashboard" class="grid w-full gap-8">
+    <PageTitle
+      title="ダッシュボード"
+      description="サイトマップを作成するためのフォームです。"
+      size="large"
+    />
 
-      <FormField v-slot="{ componentField }" name="numberOfCrawlPage">
-        <FormItem>
-          <FormLabel>クロール数</FormLabel>
-          <FormControl>
-            <NumberField
-              v-bind="componentField"
-              v-model:model-value="numberOfCrawlPage"
-              :default-value="numberOfCrawlPage"
-              :min="0"
-            >
-              <NumberFieldContent>
-                <NumberFieldDecrement />
-                <NumberFieldInput />
-                <NumberFieldIncrement />
-              </NumberFieldContent>
-            </NumberField>
-          </FormControl>
-          <FormDescription class="dark:text-white">
-            クロールするページ数を入力してください。
-          </FormDescription>
-          <FormMessage />
-        </FormItem>
-      </FormField>
+    <div class="grid w-full grid-cols-2 gap-8">
+      <form @submit="onSubmit" class="w-full space-y-8">
+        <FormField v-slot="{ componentField }" name="crawlUrl">
+          <FormItem>
+            <FormLabel>サイトURL</FormLabel>
+            <FormControl>
+              <Input
+                type="text"
+                placeholder="https://example.com"
+                v-bind="componentField"
+              />
+            </FormControl>
+            <FormDescription>
+              クロールしたいサイトのURLを入力してください。例:
+              https://example.com
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        </FormField>
 
-      <Button type="submit">
-        {{ isLoading ? "リクエスト中..." : "サイトマップ作成" }}
-      </Button>
-    </Form>
+        <FormField v-slot="{ componentField }" name="numberOfCrawlPage">
+          <FormItem>
+            <FormLabel>クロール数</FormLabel>
+            <FormControl>
+              <Input type="number" placeholder="10" v-bind="componentField" />
+            </FormControl>
+            <FormDescription>
+              クロールするページ数を入力してください。例: 10
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        </FormField>
+
+        <Button type="submit">
+          <span v-if="isLoading">クロール中...</span>
+          <span v-else>サイトマップ作成リクエスト</span>
+        </Button>
+      </form>
+
+      <div class="w-full rounded-lg border bg-gray-50 p-4">
+        <pre v-if="crawlResult">
+          {{ JSON.stringify(crawlResult, null, 2) }}
+        </pre>
+        <p v-else>クロール結果はここに表示されます。</p>
+        <span v-if="errorMessage" class="text-red-500">
+          {{ errorMessage }}
+        </span>
+      </div>
+    </div>
   </div>
 </template>
