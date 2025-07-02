@@ -1,0 +1,10 @@
+node_modules
+storage
+pnpm-lock.yaml
+*.env
+.env.local
+screenshots
+fly.toml
+credential.json
+property_id.json
+marsflag.json
