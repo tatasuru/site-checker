@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const route = useRoute();
 const config = useRuntimeConfig();
+import "vue-sonner/style.css";
 
 /************************
  * SEO

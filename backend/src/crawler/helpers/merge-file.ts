@@ -20,7 +20,7 @@ export async function mergeDatasetFiles() {
   } catch (error) {
     console.error("Error merging dataset:", error);
 
-    // 方法2: 手動でファイルを読み込み（フォールバック）
+    // 手動でファイルを読み込み（フォールバック）
     return await manualMerge();
   }
 }

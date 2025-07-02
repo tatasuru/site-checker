@@ -49,10 +49,12 @@ export default defineNuxtConfig({
       supabaseUrl: process.env.SUPABASE_URL,
       supabaseKey: process.env.SUPABASE_KEY,
       baseUrl: process.env.BASE_URL,
+      crawlApiUrl: process.env.CRAWL_API_URL,
     },
     // server side
     private: {
       stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+      crawlApiUrl: process.env.CRAWL_API_URL,
     },
   },
 
