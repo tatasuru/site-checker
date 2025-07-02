@@ -10,8 +10,13 @@ export default defineNuxtRouteMiddleware(async (to, _from) => {
   }
 
   // Check if the user is not authenticated and trying to access the dashboard
-  if (to.path === "/login" && user.value) {
-    return await navigateTo("/dashboard");
+  if (user.value) {
+    if (to.path === "/") {
+      return await navigateTo("/dashboard");
+    }
+    if (to.path === "/login") {
+      return await navigateTo("/dashboard");
+    }
   }
 
   // Handle profile setup for authenticated users

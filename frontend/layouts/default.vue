@@ -3,7 +3,6 @@ import { useSidebarStore } from "@/stores/sidebar";
 import AppSidebar from "@/components/layout/AppSidebar.vue";
 import AppHeader from "@/components/layout/AppHeader.vue";
 
-const route = useRoute();
 const sidebarStore = useSidebarStore();
 
 onMounted(() => {

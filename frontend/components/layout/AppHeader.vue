@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useSidebarStore } from "@/stores/sidebar";
-import { toast } from "vue-sonner";
 
 const colorMode = useColorMode();
 const supabase = useSupabaseClient();
@@ -8,6 +7,12 @@ const user = useSupabaseUser();
 const store = useStore();
 const sidebarStore = useSidebarStore();
 const route = useRoute();
+
+interface Profile {
+  id: string;
+  name: string;
+  avatar_url: string;
+}
 
 /************************
  * sign out
@@ -26,6 +31,25 @@ const signOutWithGoogle = async () => {
 const toggleSidebar = () => {
   sidebarStore.toggleSidebar();
 };
+
+// for initializing store on mount with user profile
+onMounted(async () => {
+  if (user.value && !store.profile.name) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.value?.id)
+      .single();
+
+    if (error || !data) {
+      console.error("Error fetching profile:", error);
+      return await navigateTo("/login");
+    }
+
+    const profile = data as Profile;
+    store.setProfile(profile);
+  }
+});
 </script>
 
 <template>
@@ -45,7 +69,7 @@ const toggleSidebar = () => {
     />
 
     <NuxtLink v-if="route.path === '/'" to="/">
-      <h1 class="gradient-text text-xl font-bold md:text-2xl">FeedForward</h1>
+      <h1 class="gradient-text text-xl font-bold md:text-2xl">Site Checker</h1>
     </NuxtLink>
 
     <!-- left -->
@@ -87,7 +111,9 @@ const toggleSidebar = () => {
           class="min-w-56"
         >
           <div class="flex flex-col gap-1 p-2">
-            <p class="text-sm">{{ store.profile.name || "ユーザー" }}</p>
+            <p class="text-sm">
+              {{ store.profile.name || "ユーザー" }}
+            </p>
           </div>
           <DropdownMenuSeparator />
           <DropdownMenuItem

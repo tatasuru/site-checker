@@ -28,13 +28,11 @@ const isActive = (url: string) => {
       data-slot="sidebar-header"
       data-sidebar="header"
     >
-      <NuxtImg
-        src="logo.png"
-        alt="Site Checker Logo"
-        width="24"
-        height="24"
-        class="rounded-full"
-      />
+      <div
+        class="border-purple gradient-bg flex size-7 shrink-0 items-center justify-between rounded-full text-white"
+      >
+        <span class="w-full text-center text-[10px]">SC</span>
+      </div>
       <span
         v-if="sidebarStore.isSidebarOpen"
         class="gradient-text overflow-hidden text-2xl font-bold whitespace-nowrap"

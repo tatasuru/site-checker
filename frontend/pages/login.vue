@@ -9,18 +9,6 @@ definePageMeta({
   layout: "custom",
 });
 
-const authInitialized = ref(false);
-
-onMounted(async () => {
-  await nextTick();
-  authInitialized.value = true;
-
-  // Redirect to dashboard if already logged in
-  if (user.value) {
-    router.push("/dashboard");
-  }
-});
-
 const login = async (providerName: "google" | "github") => {
   try {
     await client.auth.signInWithOAuth({
