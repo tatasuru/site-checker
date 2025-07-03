@@ -20,6 +20,7 @@ router.addDefaultHandler(async ({ request, page, enqueueLinks, log }) => {
   // 基本情報を取得
   const title = await page.title();
   const url = request.loadedUrl;
+  // TODO: httpリクエストで取れればいいかな。
   const htmlContent = await page.content();
   const links = await page.$$eval("a[href]", (elements) =>
     elements.map((el) => ({
