@@ -22,7 +22,7 @@ onMounted(() => {
     <AppSidebar />
     <main class="flex flex-1 flex-col">
       <AppHeader />
-      <div class="min-h-[calc(100svh-52px)] px-6 py-2">
+      <div class="min-h-[calc(100svh-64px)] px-6 py-2">
         <slot />
       </div>
     </main>

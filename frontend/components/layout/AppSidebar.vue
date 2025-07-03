@@ -9,6 +9,19 @@ const items = [
     url: "/dashboard",
     icon: "mdi:view-dashboard",
   },
+  {
+    title: "サイト一覧",
+    url: "/sites",
+    icon: "mdi:view-list",
+  },
+];
+
+const actions = [
+  {
+    title: "新規サイト登録",
+    url: "/sites/new",
+    icon: "mdi:plus",
+  },
 ];
 
 const route = useRoute();
@@ -58,6 +71,29 @@ const isActive = (url: string) => {
                   <span v-if="sidebarStore.isSidebarOpen">
                     {{ item.title }}
                   </span>
+                </NuxtLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+
+      <Separator />
+
+      <SidebarGroup>
+        <SidebarGroupLabel v-if="sidebarStore.isSidebarOpen">
+          アクション
+        </SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <SidebarMenuItem v-for="action in actions" :key="action.title">
+              <SidebarMenuButton
+                asChild
+                class="hover:bg-green/20 hover:text-green focus:bg-green/20 focus:text-green active:bg-green/20 active:text-green"
+              >
+                <NuxtLink to="/sites/new">
+                  <Icon name="mdi:plus" />
+                  <span v-if="sidebarStore.isSidebarOpen">新規サイト登録</span>
                 </NuxtLink>
               </SidebarMenuButton>
             </SidebarMenuItem>
