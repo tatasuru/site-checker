@@ -129,7 +129,7 @@ onBeforeUnmount(() => {
         description="登録したサイトの情報を表示します。"
         size="large"
       />
-      <Button as-child>
+      <Button as-child variant="main">
         <NuxtLink to="/sites/new" class="flex items-center gap-2">
           <Icon name="mdi-plus" />
           新規登録

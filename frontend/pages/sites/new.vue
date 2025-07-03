@@ -129,11 +129,20 @@ const onSubmit = async (values: formValues) => {
 
 <template>
   <div id="dashboard" class="grid h-full w-full grid-rows-[auto_1fr] gap-8">
-    <PageTitle
-      title="新規サイト登録"
-      description="品質チェックするサイトを登録します。"
-      size="large"
-    />
+    <div class="flex items-center justify-between">
+      <PageTitle
+        title="新規サイト登録"
+        description="品質チェックするサイトを登録します。"
+        size="large"
+      />
+
+      <Button as-child variant="link">
+        <NuxtLink to="/sites" class="flex items-center gap-2">
+          <Icon name="mdi-arrow-left" />
+          サイト一覧へ戻る
+        </NuxtLink>
+      </Button>
+    </div>
 
     <div class="flex-1">
       <div class="flex h-full w-full items-start gap-12">
@@ -282,8 +291,6 @@ const onSubmit = async (values: formValues) => {
                       <Input
                         type="number"
                         placeholder="10"
-                        min="1"
-                        max="100"
                         v-bind="componentField"
                       />
                     </FormControl>
