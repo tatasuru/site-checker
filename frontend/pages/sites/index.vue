@@ -29,6 +29,9 @@ definePageMeta({
   layout: "default",
 });
 
+/************************
+ * Functions
+ ************************/
 // get crawl results for the authenticated user
 async function fetchCrawlResults(userId: string) {
   const { data, error } = await supabase
@@ -46,6 +49,40 @@ async function fetchCrawlResults(userId: string) {
   return data as MySite[];
 }
 
+function getIconName(status: string): string {
+  switch (status) {
+    case "waiting":
+      return "mdi:timer-sand";
+    case "processing":
+      return "mdi:sync";
+    case "completed":
+      return "mdi:check-circle";
+    case "failed":
+      return "mdi:alert-circle";
+    default:
+      return "mdi:help-circle";
+  }
+}
+
+function getStatusColor(status: string): string {
+  switch (status) {
+    case "waiting":
+      return "text-yellow-500";
+    case "processing":
+      return "text-blue-500";
+    case "completed":
+      return "text-green-500";
+    case "failed":
+      return "text-red-500";
+    default:
+      return "text-gray-500";
+  }
+}
+
+/************************
+ * Lifecycle Hooks
+ ************************/
+let subscription: any = null;
 onMounted(async () => {
   if (!user.value) {
     console.error("User is not authenticated");
@@ -55,24 +92,33 @@ onMounted(async () => {
   isLoading.value = true;
   myCrawlResults.value = await fetchCrawlResults(user.value.id);
   isLoading.value = false;
+
+  // Set up subscription after user is confirmed
+  subscription = supabase
+    .channel("custom-update-channel")
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "crawl_results",
+        filter: `user_id=eq.${user.value.id}`,
+      },
+      async (payload) => {
+        if (user.value) {
+          myCrawlResults.value = await fetchCrawlResults(user.value.id);
+          console.log("Crawl results updated:", payload);
+        }
+      },
+    )
+    .subscribe();
 });
 
-supabase
-  .channel("custom-update-channel")
-  .on(
-    "postgres_changes",
-    {
-      event: "UPDATE",
-      schema: "public",
-      table: "crawl_results",
-      filter: `user_id=eq.${user.value?.id}`,
-    },
-    async (payload) => {
-      myCrawlResults.value = await fetchCrawlResults(user.value?.id || "");
-      console.log("New crawl result inserted:", myCrawlResults.value);
-    },
-  )
-  .subscribe();
+onBeforeUnmount(() => {
+  if (subscription) {
+    subscription.unsubscribe();
+  }
+});
 </script>
 
 <template>
@@ -91,14 +137,6 @@ supabase
       </Button>
     </div>
 
-    <!-- <div
-      v-if="isLoading && myCrawlResults.length === 0"
-      class="text-muted-foreground flex"
-    >
-      <Icon name="mdi:loading" class="!size-5 animate-spin" />
-      <span class="ml-2">読み込み中...</span>
-    </div> -->
-
     <div class="grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-6">
       <Card v-for="site in myCrawlResults" :key="site.id" class="gap-2 py-4">
         <CardHeader class="px-4">
@@ -109,26 +147,15 @@ supabase
             >
               {{ site.site_name }}
             </NuxtLink>
-            <Badge variant="outline" class="items-center gap-1 rounded-full">
+            <Badge
+              variant="outline"
+              class="items-center gap-1 rounded-full"
+              :class="getStatusColor(site.status)"
+            >
               <Icon
-                v-if="site.status === 'waiting'"
-                name="mdi:timer-sand"
+                :name="getIconName(site.status)"
                 class="!size-3"
-              />
-              <Icon
-                v-else-if="site.status === 'processing'"
-                name="mdi:sync"
-                class="!size-3 animate-spin"
-              />
-              <Icon
-                v-else-if="site.status === 'completed'"
-                name="mdi:check-circle"
-                class="!size-3"
-              />
-              <Icon
-                v-else-if="site.status === 'failed'"
-                name="mdi:alert-circle"
-                class="!size-3"
+                :class="site.status === 'processing' && 'animate-spin'"
               />
               {{ site.status }}
             </Badge>
