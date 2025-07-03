@@ -5,6 +5,7 @@ const user = useSupabaseUser();
 
 interface MySite {
   id: string;
+  job_id: string;
   user_id: string;
   site_name: string;
   site_url: string;
@@ -12,35 +13,66 @@ interface MySite {
   sitemap_data: string; // JSON string
   number_of_crawl_page: number;
   created_at: string;
+  updated_at: string;
+  completed_at: string | null; // ISO date string or null
+  number_of_crawl_page_job: number;
+  status: "waiting" | "processing" | "completed" | "failed";
+  progress: number;
+  job_result: string;
+  error_message: string | null;
 }
+
+const myCrawlResults = ref<MySite[]>([]);
 
 definePageMeta({
   middleware: "auth",
   layout: "default",
 });
 
-const { data: mySiteList } = await useAsyncData<MySite[]>(
-  "mySiteList",
-  async () => {
-    if (!user.value?.id) {
-      return [];
-    }
+// get crawl results for the authenticated user
+async function fetchCrawlResults(userId: string) {
+  const { data, error } = await supabase
+    .from("crawl_results")
+    .select("*")
+    .eq("user_id", userId)
+    .order("updated_at", { ascending: false })
+    .limit(100);
 
-    try {
-      const { data, error } = await supabase
-        .from("crawl_results")
-        .select("*")
-        .eq("user_id", user.value?.id)
-        .limit(100);
+  if (error) {
+    console.error("Error fetching crawl results:", error);
+    return [];
+  }
 
-      if (error) throw new Error(error.message);
-      return data;
-    } catch (error) {
-      console.error("Error fetching form templates:", error);
-      return [];
-    }
-  },
-);
+  return data as MySite[];
+}
+
+onMounted(async () => {
+  if (!user.value) {
+    console.error("User is not authenticated");
+    return;
+  }
+
+  isLoading.value = true;
+  myCrawlResults.value = await fetchCrawlResults(user.value.id);
+  isLoading.value = false;
+});
+
+supabase
+  .channel("custom-update-channel")
+  .on(
+    "postgres_changes",
+    {
+      event: "UPDATE",
+      schema: "public",
+      table: "crawl_results",
+      filter: `user_id=eq.${user.value?.id}`,
+    },
+    async (payload) => {
+      myCrawlResults.value = await fetchCrawlResults(user.value?.id || "");
+      console.log("New crawl result inserted:", myCrawlResults.value);
+    },
+  )
+  .subscribe();
 </script>
 
 <template>
@@ -59,8 +91,16 @@ const { data: mySiteList } = await useAsyncData<MySite[]>(
       </Button>
     </div>
 
+    <!-- <div
+      v-if="isLoading && myCrawlResults.length === 0"
+      class="text-muted-foreground flex"
+    >
+      <Icon name="mdi:loading" class="!size-5 animate-spin" />
+      <span class="ml-2">読み込み中...</span>
+    </div> -->
+
     <div class="grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-6">
-      <Card v-for="site in mySiteList" :key="site.id" class="gap-2 py-4">
+      <Card v-for="site in myCrawlResults" :key="site.id" class="gap-2 py-4">
         <CardHeader class="px-4">
           <CardTitle class="flex items-center justify-between">
             <NuxtLink
@@ -69,13 +109,28 @@ const { data: mySiteList } = await useAsyncData<MySite[]>(
             >
               {{ site.site_name }}
             </NuxtLink>
-            <Badge
-              v-if="site.crawl_data"
-              variant="outline"
-              class="gap-1 rounded-full"
-            >
-              <Icon name="mdi:globe" class="!size-3" />
-              チェック完了
+            <Badge variant="outline" class="items-center gap-1 rounded-full">
+              <Icon
+                v-if="site.status === 'waiting'"
+                name="mdi:timer-sand"
+                class="!size-3"
+              />
+              <Icon
+                v-else-if="site.status === 'processing'"
+                name="mdi:sync"
+                class="!size-3 animate-spin"
+              />
+              <Icon
+                v-else-if="site.status === 'completed'"
+                name="mdi:check-circle"
+                class="!size-3"
+              />
+              <Icon
+                v-else-if="site.status === 'failed'"
+                name="mdi:alert-circle"
+                class="!size-3"
+              />
+              {{ site.status }}
             </Badge>
           </CardTitle>
           <CardDescription>
@@ -95,9 +150,23 @@ const { data: mySiteList } = await useAsyncData<MySite[]>(
                 name="mdi:clock-outline"
                 class="text-muted-foreground !size-4"
               />
-              <span class="text-muted-foreground text-sm">
+              <span
+                v-if="site.completed_at"
+                class="text-muted-foreground text-sm"
+              >
                 最終チェック:
-                {{ new Date(site.created_at).toLocaleDateString() }}
+                {{
+                  new Date(site.completed_at).toLocaleDateString("ja-JP", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                }}
+              </span>
+              <span v-else class="text-muted-foreground text-sm">
+                チェック中...
               </span>
             </div>
             <div class="flex items-center gap-1">
@@ -105,8 +174,14 @@ const { data: mySiteList } = await useAsyncData<MySite[]>(
                 name="mdi:file-document-outline"
                 class="text-muted-foreground !size-4"
               />
-              <span class="text-muted-foreground text-sm">
+              <span
+                v-if="site.completed_at"
+                class="text-muted-foreground text-sm"
+              >
                 ページ数: {{ site.number_of_crawl_page }}
+              </span>
+              <span v-else class="text-muted-foreground text-sm">
+                チェック予定ページ数: {{ site.number_of_crawl_page_job }}
               </span>
             </div>
           </div>

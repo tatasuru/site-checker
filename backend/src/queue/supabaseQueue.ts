@@ -47,23 +47,6 @@ class SupabaseQueue extends EventEmitter {
       .select()
       .single();
 
-    // crawl_resultsテーブルにジョブIDを追加する
-    if (job) {
-      await supabase.from("crawl_results").insert({
-        user_id: data.userId,
-        job_id: job.id,
-        site_name: data.siteName,
-        site_url: data.siteUrl,
-        crawl_data: null, // 初期はnull、後で更新
-        sitemap_data: null, // 初期はnull、後で更新
-        number_of_crawl_page: data.numberOfCrawlPage
-          ? parseInt(data.numberOfCrawlPage)
-          : 0,
-      });
-    }
-
-    console.log("ジョブ追加結果:", job, error);
-
     if (error) throw error;
 
     console.log(`ジョブ追加: ${job.id} - ${data.siteUrl}`);
