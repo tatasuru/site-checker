@@ -56,7 +56,7 @@ watchEffect(() => {
 <template>
   <NuxtLayout>
     <NuxtLoadingIndicator
-      :color="'#7C3AED'"
+      :color="'#3bb845'"
       :height="4"
       :duration="5000"
       :throttle="0"
