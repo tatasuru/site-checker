@@ -2,7 +2,7 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import multiPart from "@fastify/multipart";
-import { CrawlAndCreateVueFlowFile } from "./crawler/index.ts";
+import { crawlQueue } from "./queue/supabaseQueue.ts";
 
 /******************************
  * for Fastify initialization
@@ -28,23 +28,61 @@ server.get("/", async (request, reply) => {
 });
 
 server.post("/create-crawl-data", async (request, reply) => {
-  const { siteUrl, userId, numberOfCrawlPage } = request.body as {
+  const { siteName, siteUrl, userId, numberOfCrawlPage } = request.body as {
+    siteName: string; // サイト名
     siteUrl: string; // クロールするサイトのURL
     userId: string; // ユーザーID
     numberOfCrawlPage?: string; //何ページクロールするか
   };
 
   try {
-    // クローラーを実行してVueFlowデータを生成
-    const data = await CrawlAndCreateVueFlowFile(
+    const jobId = await crawlQueue.addJob({
+      siteName,
       siteUrl,
       userId,
-      numberOfCrawlPage
-    );
-    return data;
+      numberOfCrawlPage,
+    });
+
+    return {
+      success: true,
+      message: "クロールジョブが開始されました",
+      jobId,
+    };
   } catch (error) {
     server.log.error(error);
-    reply.status(500).send({ error: "Failed to create crawl data." });
+    reply.status(500).send({
+      error: "Failed to queue crawl job.",
+      details: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+});
+
+server.get("/crawl-status/:jobId", async (request, reply) => {
+  const { jobId } = request.params as { jobId: string };
+
+  try {
+    const job = await crawlQueue.getJob(jobId);
+
+    if (!job) {
+      return reply.status(404).send({ error: "ジョブが見つかりません" });
+    }
+
+    return job;
+  } catch (error) {
+    server.log.error(error);
+    reply.status(500).send({ error: "Failed to get job status." });
+  }
+});
+
+server.get("/user-crawl-jobs/:userId", async (request, reply) => {
+  const { userId } = request.params as { userId: string };
+
+  try {
+    const jobs = await crawlQueue.getUserJobs(userId);
+    return { jobs };
+  } catch (error) {
+    server.log.error(error);
+    reply.status(500).send({ error: "Failed to get user jobs." });
   }
 });
 

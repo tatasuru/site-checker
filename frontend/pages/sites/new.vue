@@ -12,7 +12,6 @@ const user = useSupabaseUser();
 const errorMessage = ref<string | null>(null);
 const isLoading = ref<boolean>(false);
 const CRAWL_API_URL = config.public.crawlApiUrl || "http://localhost:8080";
-const crawlResult = ref<any>(null);
 const isSubmitting = ref<boolean>(false);
 
 definePageMeta({
@@ -72,6 +71,8 @@ const formSchema = [
  * Submit handler for the crawl form
  *************************************************/
 const onSubmit = async (values: formValues) => {
+  isSubmitting.value = true;
+
   if (!user.value?.id) {
     errorMessage.value = "User not authenticated";
     return;
@@ -89,6 +90,7 @@ const onSubmit = async (values: formValues) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        siteName: values.siteName,
         siteUrl: new URL(values.crawlUrl).origin + "/",
         userId: user.value?.id,
         numberOfCrawlPage: String(values.numberOfCrawlPage),
@@ -96,17 +98,20 @@ const onSubmit = async (values: formValues) => {
     });
 
     if (!response.ok) {
+      isSubmitting.value = false;
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     setTimeout(async () => {
       // Reset form
       isLoading.value = false;
+      isSubmitting.value = false;
 
       // Show success toast
       toast.success("サイトマップ作成リクエスト成功");
-
-      crawlResult.value = await response.json();
+      await navigateTo({
+        name: "sites",
+      });
     }, 2000);
   } catch (error) {
     console.error("Crawling failed:", error);
