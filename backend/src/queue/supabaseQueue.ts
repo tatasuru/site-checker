@@ -47,6 +47,21 @@ class SupabaseQueue extends EventEmitter {
       .select()
       .single();
 
+    // crawl_resultsテーブルにジョブIDを追加する
+    if (job) {
+      await supabase.from("crawl_results").insert({
+        user_id: data.userId,
+        job_id: job.id,
+        site_name: data.siteName,
+        site_url: data.siteUrl,
+        crawl_data: null, // 初期はnull、後で更新
+        sitemap_data: null, // 初期はnull、後で更新
+        number_of_crawl_page: data.numberOfCrawlPage
+          ? parseInt(data.numberOfCrawlPage)
+          : 0,
+      });
+    }
+
     console.log("ジョブ追加結果:", job, error);
 
     if (error) throw error;
@@ -188,14 +203,12 @@ class SupabaseQueue extends EventEmitter {
       const vueFlowData = await generateVueFlowData(allData);
       const { data, error } = await supabase
         .from("crawl_results")
-        .insert({
-          user_id: job.user_id,
-          site_name: job.site_name,
-          site_url: job.site_url,
+        .update({
           crawl_data: JSON.stringify(allData),
           sitemap_data: JSON.stringify(vueFlowData),
           number_of_crawl_page: allData.length,
         })
+        .eq("job_id", jobId)
         .select();
 
       console.log("クロール結果アップロード:", data, error);

@@ -1,10 +1,46 @@
 <script setup lang="ts">
 const isLoading = ref<boolean>(false);
+const supabase = useSupabaseClient();
+const user = useSupabaseUser();
+
+interface MySite {
+  id: string;
+  user_id: string;
+  site_name: string;
+  site_url: string;
+  crawl_data: string; // JSON string
+  sitemap_data: string; // JSON string
+  number_of_crawl_page: number;
+  created_at: string;
+}
 
 definePageMeta({
   middleware: "auth",
   layout: "default",
 });
+
+const { data: mySiteList } = await useAsyncData<MySite[]>(
+  "mySiteList",
+  async () => {
+    if (!user.value?.id) {
+      return [];
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("crawl_results")
+        .select("*")
+        .eq("user_id", user.value?.id)
+        .limit(100);
+
+      if (error) throw new Error(error.message);
+      return data;
+    } catch (error) {
+      console.error("Error fetching form templates:", error);
+      return [];
+    }
+  },
+);
 </script>
 
 <template>
@@ -23,18 +59,34 @@ definePageMeta({
       </Button>
     </div>
 
-    <div class="grid w-full grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
-      <Card class="pt-0">
-        <div class="relative h-56 w-full rounded-xl">
-          <NuxtImg
-            src="/dummy-image.png"
-            alt="サイトチェック"
-            class="h-full w-full rounded-t-xl"
-          />
-        </div>
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-6">
+      <Card v-for="site in mySiteList" :key="site.id" class="gap-2 py-4">
         <CardHeader class="px-4">
-          <CardTitle>サイトのプロジェクト名</CardTitle>
-          <CardDescription> https://example.com </CardDescription>
+          <CardTitle class="flex items-center justify-between">
+            <NuxtLink
+              :to="`/sites/${site.id}/details`"
+              class="w-full hover:underline hover:opacity-80"
+            >
+              {{ site.site_name }}
+            </NuxtLink>
+            <Badge
+              v-if="site.crawl_data"
+              variant="outline"
+              class="gap-1 rounded-full"
+            >
+              <Icon name="mdi:globe" class="!size-3" />
+              チェック完了
+            </Badge>
+          </CardTitle>
+          <CardDescription>
+            <NuxtLink
+              :to="site.site_url"
+              target="_blank"
+              class="hover:underline hover:opacity-80"
+            >
+              {{ site.site_url }}
+            </NuxtLink>
+          </CardDescription>
         </CardHeader>
         <CardFooter class="flex-col gap-4 px-4">
           <div class="flex w-full items-center gap-4">
@@ -44,7 +96,8 @@ definePageMeta({
                 class="text-muted-foreground !size-4"
               />
               <span class="text-muted-foreground text-sm">
-                最終チェック: 2025年1月1日
+                最終チェック:
+                {{ new Date(site.created_at).toLocaleDateString() }}
               </span>
             </div>
             <div class="flex items-center gap-1">
@@ -52,15 +105,11 @@ definePageMeta({
                 name="mdi:file-document-outline"
                 class="text-muted-foreground !size-4"
               />
-              <span class="text-muted-foreground text-sm"> ページ数: 100 </span>
+              <span class="text-muted-foreground text-sm">
+                ページ数: {{ site.number_of_crawl_page }}
+              </span>
             </div>
           </div>
-
-          <Button class="w-full" :loading="isLoading" as-child>
-            <NuxtLink to="/sites/1/details" class="w-full">
-              詳細を見る
-            </NuxtLink>
-          </Button>
         </CardFooter>
       </Card>
     </div>
