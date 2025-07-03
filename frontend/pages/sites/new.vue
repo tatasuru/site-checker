@@ -149,17 +149,17 @@ const onSubmit = async (values: formValues) => {
         <Stepper
           v-model="stepIndex"
           orientation="vertical"
-          class="mx-auto flex w-full max-w-[350px] flex-col justify-start gap-10 p-2"
+          class="mx-auto flex w-fit max-w-[200px] flex-col justify-start gap-10 p-2"
         >
           <template v-for="step in steps" :key="step.step">
             <StepperItem
               v-slot="{ state }"
-              class="relative flex w-full items-start gap-6"
+              class="relative flex w-full items-center gap-4"
               :step="step.step"
             >
               <StepperSeparator
                 v-if="step.step !== steps[steps.length - 1].step"
-                class="bg-muted group-data-[state=completed]:bg-green absolute top-[38px] left-[17px] block h-[105%] w-0.5 shrink-0 rounded-full"
+                class="bg-muted group-data-[state=completed]:bg-green absolute top-[38px] left-[11px] block h-[107%] w-0.5 shrink-0 rounded-full"
               />
 
               <StepperTrigger as-child>
@@ -170,7 +170,7 @@ const onSubmit = async (values: formValues) => {
                       : 'outline'
                   "
                   size="icon"
-                  class="z-10 shrink-0 rounded-full"
+                  class="z-10 size-6 shrink-0 rounded-full"
                   :class="[
                     state === 'active' &&
                       'ring-green ring-offset-background ring-2 ring-offset-2',
@@ -180,17 +180,17 @@ const onSubmit = async (values: formValues) => {
                   <Icon
                     v-if="state === 'completed'"
                     name="mdi-check"
-                    class="size-5"
+                    class="size-4"
                   />
                   <Icon
                     v-else-if="state === 'active'"
                     name="mdi-circle"
-                    class="size-5"
+                    class="size-4"
                   />
                   <Icon
                     v-else
                     name="mdi-circle-outline"
-                    class="text-muted-foreground size-5"
+                    class="text-muted-foreground size-4"
                   />
                 </Button>
               </StepperTrigger>
@@ -198,9 +198,9 @@ const onSubmit = async (values: formValues) => {
               <div class="flex flex-col gap-1">
                 <StepperTitle
                   :class="[state === 'active' && 'text-primary']"
-                  class="flex items-center gap-2 text-sm font-semibold transition lg:text-base"
+                  class="text-muted-foreground flex items-center gap-2 text-xs font-semibold transition lg:text-xs"
                 >
-                  {{ step.title }}
+                  STEP.{{ step.step }}
                   <Badge
                     v-if="!step.required"
                     variant="secondary"
@@ -211,9 +211,9 @@ const onSubmit = async (values: formValues) => {
                 </StepperTitle>
                 <StepperDescription
                   :class="[state === 'active' && 'text-primary']"
-                  class="text-muted-foreground sr-only text-xs transition md:not-sr-only lg:text-sm"
+                  class="sr-only text-sm transition md:not-sr-only lg:text-sm"
                 >
-                  {{ step.description }}
+                  {{ step.title }}
                 </StepperDescription>
               </div>
             </StepperItem>
@@ -246,6 +246,12 @@ const onSubmit = async (values: formValues) => {
             class="flex h-full w-full flex-col justify-between p-2"
           >
             <div class="flex flex-col gap-8">
+              <PageTitle
+                :title="`STEP.${stepIndex} - ${steps[stepIndex - 1].title}`"
+                :description="steps[stepIndex - 1].description"
+                size="small"
+              />
+
               <template v-if="stepIndex === 1">
                 <FormField v-slot="{ componentField }" name="siteName">
                   <FormItem>

@@ -41,7 +41,7 @@ async function deleteCrawlResult(id: string) {
         description="サイトの詳細情報を表示します。"
         size="large"
       />
-      <Button as-child>
+      <Button as-child variant="link">
         <NuxtLink to="/sites" class="flex items-center gap-2">
           <Icon name="mdi-arrow-left" />
           サイト一覧へ戻る

@@ -192,6 +192,12 @@ onBeforeUnmount(() => {
                   })
                 }}
               </span>
+              <span
+                v-else-if="site.status === 'failed'"
+                class="text-muted-foreground text-sm"
+              >
+                {{ site.error_message || "エラーが発生しました" }}
+              </span>
               <span v-else class="text-muted-foreground text-sm">
                 チェック中...
               </span>

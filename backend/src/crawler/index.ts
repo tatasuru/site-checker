@@ -99,6 +99,13 @@ export async function executeCrawler(
     // 20リクエストを超えたら停止する
     maxRequestsPerCrawl: Number(numberOfCrawlPage) || 20,
     headless: true,
+
+    // 1ページあたりの最大リトライ回数
+    maxRequestRetries: 2,
+
+    // 並行処理の最大数
+    // 10リクエストを同時に処理する
+    maxConcurrency: 10,
   });
 
   const result = await crawler.run([siteUrl]);
