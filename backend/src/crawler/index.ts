@@ -5,6 +5,79 @@ import fs from "fs/promises";
 import path from "path";
 import type { VueFlowNode, VueFlowEdge } from "../types/vueflow.ts";
 
+/************************************
+ * 0. ストレージをクリアする関数
+ *************************************/
+export async function clearStorage() {
+  try {
+    const storagePath = "./storage";
+
+    // datasets をクリア
+    const datasetsPath = path.join(storagePath, "datasets", "default");
+    try {
+      await fs.rm(datasetsPath, { recursive: true, force: true });
+      console.log("Datasets cleared");
+    } catch (error) {
+      console.log("No datasets to clear");
+    }
+
+    // request_queues の中身のみクリア（ディレクトリは保持）
+    const requestQueuesPath = path.join(
+      storagePath,
+      "request_queues",
+      "default"
+    );
+    try {
+      const files = await fs.readdir(requestQueuesPath);
+      for (const file of files) {
+        await fs.unlink(path.join(requestQueuesPath, file));
+        console.log(`Cleared request queue file: ${file}`);
+      }
+    } catch (error) {
+      console.log("No request queues to clear");
+    }
+
+    // key_value_stores の特定ファイルのみクリア（セッションプール状態は保持）
+    const keyValueStoresPath = path.join(
+      storagePath,
+      "key_value_stores",
+      "default"
+    );
+    try {
+      const files = await fs.readdir(keyValueStoresPath);
+      for (const file of files) {
+        // セッションプール状態ファイルは保持
+        if (file !== "SDK_SESSION_POOL_STATE.json") {
+          await fs.unlink(path.join(keyValueStoresPath, file));
+          console.log(`Cleared key-value store file: ${file}`);
+        }
+      }
+    } catch (error) {
+      console.log("No key-value stores to clear");
+    }
+
+    // merged files をクリア
+    const mergedFiles = [
+      path.join(storagePath, "merged-crawl-data.json"),
+      path.join(storagePath, "vueflow-data.json"),
+    ];
+
+    for (const file of mergedFiles) {
+      try {
+        await fs.unlink(file);
+        console.log(`Cleared: ${file}`);
+      } catch (error) {
+        // File doesn't exist, ignore
+      }
+    }
+
+    console.log("Storage cleared successfully");
+  } catch (error) {
+    console.error("Error clearing storage:", error);
+    throw error;
+  }
+}
+
 // 全てqueueのジョブを実行するための関数
 /************************************
  * 1. クローラーを実行する関数
@@ -13,6 +86,9 @@ export async function executeCrawler(
   siteUrl: string,
   numberOfCrawlPage: string | undefined
 ) {
+  // 0. ストレージをクリア（新しいクロールのため）
+  await clearStorage();
+
   // 1. クローラーを実行
   const crawler = new PlaywrightCrawler({
     requestHandler: router,
