@@ -1,9 +1,10 @@
-import { PlaywrightCrawler } from "crawlee";
+import { PlaywrightCrawler, Configuration } from "crawlee";
 import { router } from "../routes.ts";
 import { Dataset } from "crawlee";
 import fs from "fs/promises";
 import path from "path";
 import type { VueFlowNode, VueFlowEdge } from "../types/vueflow.ts";
+import { log } from "console";
 
 /************************************
  * 0. ストレージをクリアする関数
@@ -12,66 +13,44 @@ export async function clearStorage() {
   try {
     const storagePath = "./storage";
 
-    // datasets をクリア
-    const datasetsPath = path.join(storagePath, "datasets", "default");
-    try {
-      await fs.rm(datasetsPath, { recursive: true, force: true });
-      console.log("Datasets cleared");
-    } catch (error) {
-      console.log("No datasets to clear");
-    }
+    // datasets を完全削除
+    await fs.rm(path.join(storagePath, "datasets"), {
+      recursive: true,
+      force: true,
+    });
 
-    // request_queues の中身のみクリア（ディレクトリは保持）
-    const requestQueuesPath = path.join(
-      storagePath,
-      "request_queues",
-      "default"
-    );
-    try {
-      const files = await fs.readdir(requestQueuesPath);
-      for (const file of files) {
-        await fs.unlink(path.join(requestQueuesPath, file));
-        console.log(`Cleared request queue file: ${file}`);
-      }
-    } catch (error) {
-      console.log("No request queues to clear");
-    }
+    // request_queues を完全削除
+    await fs.rm(path.join(storagePath, "request_queues"), {
+      recursive: true,
+      force: true,
+    });
 
-    // key_value_stores の特定ファイルのみクリア（セッションプール状態は保持）
-    const keyValueStoresPath = path.join(
-      storagePath,
-      "key_value_stores",
-      "default"
-    );
+    // key_value_stores は選択的削除
+    const kvPath = path.join(storagePath, "key_value_stores", "default");
     try {
-      const files = await fs.readdir(keyValueStoresPath);
+      const files = await fs.readdir(kvPath);
+      const protectedFiles = ["SDK_SESSION_POOL_STATE.json", "INPUT.json"];
+
       for (const file of files) {
-        // セッションプール状態ファイルは保持
-        if (file !== "SDK_SESSION_POOL_STATE.json") {
-          await fs.unlink(path.join(keyValueStoresPath, file));
-          console.log(`Cleared key-value store file: ${file}`);
+        if (!protectedFiles.includes(file)) {
+          await fs.unlink(path.join(kvPath, file));
         }
       }
     } catch (error) {
-      console.log("No key-value stores to clear");
+      // ディレクトリが存在しない場合は無視
     }
 
-    // merged files をクリア
-    const mergedFiles = [
+    // カスタムファイル削除
+    const customFiles = [
       path.join(storagePath, "merged-crawl-data.json"),
       path.join(storagePath, "vueflow-data.json"),
     ];
 
-    for (const file of mergedFiles) {
-      try {
-        await fs.unlink(file);
-        console.log(`Cleared: ${file}`);
-      } catch (error) {
-        // File doesn't exist, ignore
-      }
-    }
+    await Promise.all(
+      customFiles.map((file) => fs.unlink(file).catch(() => {}))
+    );
 
-    console.log("Storage cleared successfully");
+    console.log("Storage cleared successfully (SDK state preserved)");
   } catch (error) {
     console.error("Error clearing storage:", error);
     throw error;
@@ -86,39 +65,47 @@ export async function executeCrawler(
   siteUrl: string,
   numberOfCrawlPage: string | undefined
 ) {
-  // 0. ストレージをクリア（新しいクロールのため）
+  // ストレージをクリア
   await clearStorage();
 
-  // 1. クローラーを実行
-  const crawler = new PlaywrightCrawler({
-    requestHandler: router,
-
-    /************************
-     *オプションを設定
-     ************************/
-    // 20リクエストを超えたら停止する
-    maxRequestsPerCrawl: Number(numberOfCrawlPage) || 20,
-    headless: true,
-
-    // 1ページあたりの最大リトライ回数
-    maxRequestRetries: 2,
-
-    // 並行処理の最大数
-    // 10リクエストを同時に処理する
-    maxConcurrency: 10,
+  // 毎回新しいConfigurationを作成
+  const config = new Configuration({
+    purgeOnStart: true, // 開始時に自動パージ
+    persistStorage: true, // データは保存
   });
 
-  const result = await crawler.run([siteUrl]);
+  const crawler = new PlaywrightCrawler(
+    {
+      requestHandler: router,
+      maxRequestsPerCrawl: Number(numberOfCrawlPage) || 20,
+      headless: true,
+      maxRequestRetries: 2,
+      maxConcurrency: 10,
+    },
+    config
+  );
 
-  if (result.requestsFailed) {
-    throw new Error("No pages were crawled. Please check the site URL.");
+  console.log(
+    `Starting crawler for ${siteUrl} with max ${numberOfCrawlPage || 20}`
+  );
+
+  try {
+    const result = await crawler.run([siteUrl]);
+    console.log("Crawler result:", result);
+
+    if (result.requestsFinished === 0) {
+      throw new Error("No pages were crawled. Please check the site URL.");
+    }
+
+    return {
+      message: "Crawling completed successfully!",
+      siteUrl,
+      numberOfCrawlPage: Number(numberOfCrawlPage) || 20,
+    };
+  } finally {
+    // 重要: リソースを明示的に解放
+    await crawler.teardown();
   }
-
-  return {
-    message: "Crawling completed successfully!",
-    siteUrl,
-    numberOfCrawlPage: Number(numberOfCrawlPage) || 20,
-  };
 }
 
 /************************************
@@ -131,6 +118,16 @@ export async function mergeDatasetFiles() {
     const allData = await dataset.getData();
 
     console.log(`Total items: ${allData.items.length}`);
+
+    if (allData.items.length === 0) {
+      console.log("No dataset items found");
+      // 空のデータを保存
+      await fs.writeFile(
+        "./storage/merged-crawl-data.json",
+        JSON.stringify([], null, 2)
+      );
+      return [];
+    }
 
     // 統合データを保存
     await fs.writeFile(
@@ -149,29 +146,42 @@ export async function mergeDatasetFiles() {
 
 async function manualMerge() {
   const datasetDir = "./storage/datasets/default";
-  const files = await fs.readdir(datasetDir);
-  const jsonFiles = files.filter((file) => file.endsWith(".json"));
 
-  const allData = [];
+  try {
+    const files = await fs.readdir(datasetDir);
+    const jsonFiles = files.filter((file) => file.endsWith(".json"));
 
-  for (const file of jsonFiles) {
-    const filePath = path.join(datasetDir, file);
-    const content = await fs.readFile(filePath, "utf-8");
-    const data = JSON.parse(content);
-    allData.push(data);
+    const allData = [];
+
+    for (const file of jsonFiles) {
+      const filePath = path.join(datasetDir, file);
+      const content = await fs.readFile(filePath, "utf-8");
+      const data = JSON.parse(content);
+      allData.push(data);
+    }
+
+    console.log(
+      `Merged ${jsonFiles.length} files with ${allData.length} total items`
+    );
+
+    // 統合データを保存
+    await fs.writeFile(
+      "./storage/merged-crawl-data.json",
+      JSON.stringify(allData, null, 2)
+    );
+
+    return allData;
+  } catch (error) {
+    console.log("No dataset directory found or no data scraped");
+
+    // 空のデータを保存
+    await fs.writeFile(
+      "./storage/merged-crawl-data.json",
+      JSON.stringify([], null, 2)
+    );
+
+    return [];
   }
-
-  console.log(
-    `Merged ${jsonFiles.length} files with ${allData.length} total items`
-  );
-
-  // 統合データを保存
-  await fs.writeFile(
-    "./storage/merged-crawl-data.json",
-    JSON.stringify(allData, null, 2)
-  );
-
-  return allData;
 }
 
 /************************************
@@ -181,6 +191,27 @@ export async function generateVueFlowData(allData: any) {
   const nodes: VueFlowNode[] = [];
   const edges: VueFlowEdge[] = [];
   const nodeMap = new Map<string, VueFlowNode>();
+
+  // データが空の場合の処理
+  if (!allData || allData.length === 0) {
+    const emptyVueFlowData = {
+      nodes: [],
+      edges: [],
+      metadata: {
+        totalNodes: 0,
+        totalEdges: 0,
+        maxDepth: 0,
+      },
+    };
+
+    await fs.writeFile(
+      "./storage/vueflow-data.json",
+      JSON.stringify(emptyVueFlowData, null, 2)
+    );
+
+    console.log("No data to generate VueFlow data from");
+    return emptyVueFlowData;
+  }
 
   // 重複URLを除去
   const uniqueData = allData.reduce((acc: any[], current: { url: any }) => {

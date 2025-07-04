@@ -35,6 +35,13 @@ server.post("/create-crawl-data", async (request, reply) => {
     numberOfCrawlPage?: string; //何ページクロールするか
   };
 
+  console.log("Received data:", {
+    siteName,
+    siteUrl,
+    userId,
+    numberOfCrawlPage,
+  });
+
   try {
     const jobId = await crawlQueue.addJob({
       siteName,
