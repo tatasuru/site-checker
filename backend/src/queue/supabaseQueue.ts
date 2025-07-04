@@ -19,7 +19,8 @@ const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
 
 class SupabaseQueue extends EventEmitter {
   private isProcessing = false;
-  private concurrency = 3;
+  // 同時実行数: 現在は1にして、リクエストが多い時でも順次処理されるようにする
+  private concurrency = 1;
   private processingJobs = new Set<string>();
 
   // ジョブ追加（Supabaseに保存）

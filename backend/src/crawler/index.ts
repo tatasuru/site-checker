@@ -4,7 +4,6 @@ import { Dataset } from "crawlee";
 import fs from "fs/promises";
 import path from "path";
 import type { VueFlowNode, VueFlowEdge } from "../types/vueflow.ts";
-import { log } from "console";
 
 /************************************
  * 0. ストレージをクリアする関数
