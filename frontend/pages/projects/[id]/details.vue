@@ -48,7 +48,7 @@ const cardContents = computed(() => {
       icon: "mdi:book-open-page-variant",
       description: myProject.value.latest_page_count
         ? `${myProject.value.latest_page_count} ページ`
-        : "ページ数が設定されていません",
+        : "チェックされたページはありません",
       buttonLabel: "サイトチェック設定へ",
       buttonLink: `/sites/${myProject.value.project_id}/settings`,
     },
@@ -363,8 +363,11 @@ onBeforeUnmount(() => {
           <Skeleton class="h-4 w-3/4" />
         </div>
         <div v-else class="space-y-4">
-          <h3 class="text-lg font-semibold">サイトチェック詳細</h3>
-          <p>サイトチェックの詳細結果がここに表示されます。</p>
+          <PageTitle
+            title="サイトチェック詳細"
+            description="このセクションでは、サイトチェックの詳細情報を表示します。"
+            size="medium"
+          />
         </div>
       </TabsContent>
 
