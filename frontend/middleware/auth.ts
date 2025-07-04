@@ -9,13 +9,13 @@ export default defineNuxtRouteMiddleware(async (to, _from) => {
     avatar_url: string;
   }
 
-  // Check if the user is not authenticated and trying to access the dashboard
+  // Check if the user is authenticated and redirect to projects
   if (user.value) {
     if (to.path === "/") {
-      return await navigateTo("/dashboard");
+      return await navigateTo("/projects");
     }
     if (to.path === "/login") {
-      return await navigateTo("/dashboard");
+      return await navigateTo("/projects");
     }
   }
 

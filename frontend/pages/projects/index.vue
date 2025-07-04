@@ -133,7 +133,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div id="dashboard" class="grid w-full gap-8">
+  <div id="projects" class="grid w-full gap-8">
     <div class="flex items-center justify-between">
       <PageTitle
         title="プロジェクト一覧"

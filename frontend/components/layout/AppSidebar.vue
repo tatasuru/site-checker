@@ -22,9 +22,9 @@ const actions = [
 const route = useRoute();
 const isActive = (url: string) => {
   return (
-    route.path.includes(url) ||
-    (url === "/" && route.path === "/dashboard") ||
-    (url.includes("/settings") && route.path.startsWith("/settings"))
+    (url.includes("/settings") && route.path.startsWith("/settings")) ||
+    (url.includes("/projects") && route.path.startsWith("/projects")) ||
+    route.path.includes(url)
   );
 };
 </script>

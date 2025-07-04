@@ -23,7 +23,7 @@ const signOutWithGoogle = async () => {
     await supabase.auth.signOut();
     return await navigateTo("/login");
   } else {
-    return await navigateTo("/dashboard");
+    return await navigateTo("/");
   }
 };
 

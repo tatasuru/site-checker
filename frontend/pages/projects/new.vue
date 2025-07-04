@@ -116,9 +116,7 @@ const onSubmit = async (values: formValues) => {
 
       // Show success toast
       toast.success("サイトマップ作成リクエスト成功");
-      await navigateTo({
-        name: "sites",
-      });
+      await navigateTo("/projects");
     }, 2000);
   } catch (error) {
     console.error("Crawling failed:", error);
@@ -135,7 +133,10 @@ const onSubmit = async (values: formValues) => {
 </script>
 
 <template>
-  <div id="dashboard" class="grid h-full w-full grid-rows-[auto_1fr] gap-8">
+  <div
+    id="create-project"
+    class="grid h-full w-full grid-rows-[auto_1fr] gap-8"
+  >
     <div class="flex items-center justify-between">
       <PageTitle
         title="新規サイト登録"
