@@ -25,7 +25,8 @@ class SupabaseQueue extends EventEmitter {
 
   // ジョブ追加（Supabaseに保存）
   async addJob(data: {
-    siteName: string;
+    projectId: string;
+    name: string;
     siteUrl: string;
     userId: string;
     numberOfCrawlPage?: string;
@@ -35,8 +36,9 @@ class SupabaseQueue extends EventEmitter {
       .from("crawl_jobs")
       .insert([
         {
+          project_id: data.projectId,
           user_id: data.userId,
-          site_name: data.siteName,
+          site_name: data.name,
           site_url: data.siteUrl,
           number_of_crawl_page: data.numberOfCrawlPage,
           result: null,

@@ -3,26 +3,28 @@ const isLoading = ref<boolean>(false);
 const supabase = useSupabaseClient();
 const user = useSupabaseUser();
 
-interface MySite {
+interface MyProjects {
   id: string;
-  job_id: string;
   user_id: string;
-  site_name: string;
+  latest_crawl_result_id: string;
+  name: string;
+  description: string;
   site_url: string;
-  crawl_data: string; // JSON string
-  sitemap_data: string; // JSON string
-  number_of_crawl_page: number;
+  crawl_frequency: string;
+  max_pages: number;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
-  completed_at: string | null; // ISO date string or null
-  number_of_crawl_page_job: number;
-  status: "waiting" | "processing" | "completed" | "failed";
-  progress: number;
-  job_result: string;
-  error_message: string | null;
+
+  // from crawl_results
+  latest_crawl_result?: {
+    status: string;
+    error_message?: string;
+    completed_at?: string;
+  };
 }
 
-const myCrawlResults = ref<MySite[]>([]);
+const myProjects = ref<MyProjects[]>([]);
 
 definePageMeta({
   middleware: "auth",
@@ -33,10 +35,19 @@ definePageMeta({
  * Functions
  ************************/
 // get crawl results for the authenticated user
-async function fetchCrawlResults(userId: string) {
+async function fetchSiteProjects(userId: string) {
   const { data, error } = await supabase
-    .from("crawl_results")
-    .select("*")
+    .from("site_projects")
+    .select(
+      `
+      *,
+      latest_crawl_result:crawl_results!latest_crawl_result_id (
+        status,
+        error_message,
+        completed_at
+      )
+    `,
+    )
     .eq("user_id", userId)
     .order("updated_at", { ascending: false })
     .limit(100);
@@ -46,7 +57,7 @@ async function fetchCrawlResults(userId: string) {
     return [];
   }
 
-  return data as MySite[];
+  return data as MyProjects[];
 }
 
 function getIconName(status: string): string {
@@ -90,7 +101,7 @@ onMounted(async () => {
   }
 
   isLoading.value = true;
-  myCrawlResults.value = await fetchCrawlResults(user.value.id);
+  myProjects.value = await fetchSiteProjects(user.value.id);
   isLoading.value = false;
 
   // Set up subscription after user is confirmed
@@ -101,12 +112,12 @@ onMounted(async () => {
       {
         event: "UPDATE",
         schema: "public",
-        table: "crawl_results",
+        table: "site_projects",
         filter: `user_id=eq.${user.value.id}`,
       },
       async (payload) => {
         if (user.value) {
-          myCrawlResults.value = await fetchCrawlResults(user.value.id);
+          myProjects.value = await fetchSiteProjects(user.value.id);
           console.log("Crawl results updated:", payload);
         }
       },
@@ -138,26 +149,33 @@ onBeforeUnmount(() => {
     </div>
 
     <div class="grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-6">
-      <Card v-for="site in myCrawlResults" :key="site.id" class="gap-2 py-4">
+      <Card v-for="site in myProjects" :key="site.id" class="gap-2 py-4">
         <CardHeader class="px-4">
           <CardTitle class="flex items-center justify-between">
             <NuxtLink
               :to="`/sites/${site.id}/details`"
               class="w-full hover:underline hover:opacity-80"
             >
-              {{ site.site_name }}
+              {{ site.name }}
             </NuxtLink>
             <Badge
               variant="outline"
               class="items-center gap-1 rounded-full"
-              :class="getStatusColor(site.status)"
+              :class="
+                getStatusColor(site.latest_crawl_result?.status || 'unknown')
+              "
             >
               <Icon
-                :name="getIconName(site.status)"
+                :name="
+                  getIconName(site.latest_crawl_result?.status || 'unknown')
+                "
                 class="!size-3"
-                :class="site.status === 'processing' && 'animate-spin'"
+                :class="
+                  site.latest_crawl_result?.status === 'processing' &&
+                  'animate-spin'
+                "
               />
-              {{ site.status }}
+              {{ site.latest_crawl_result?.status || "unknown" }}
             </Badge>
           </CardTitle>
           <CardDescription>
@@ -177,13 +195,10 @@ onBeforeUnmount(() => {
                 name="mdi:clock-outline"
                 class="text-muted-foreground !size-4"
               />
-              <span
-                v-if="site.completed_at"
-                class="text-muted-foreground text-sm"
-              >
-                最終チェック:
+              <span class="text-muted-foreground text-sm">
+                作成日時:
                 {{
-                  new Date(site.completed_at).toLocaleDateString("ja-JP", {
+                  new Date(site.created_at).toLocaleDateString("ja-JP", {
                     year: "numeric",
                     month: "2-digit",
                     day: "2-digit",
@@ -192,29 +207,14 @@ onBeforeUnmount(() => {
                   })
                 }}
               </span>
-              <span
-                v-else-if="site.status === 'failed'"
-                class="text-muted-foreground text-sm"
-              >
-                {{ site.error_message || "エラーが発生しました" }}
-              </span>
-              <span v-else class="text-muted-foreground text-sm">
-                チェック中...
-              </span>
             </div>
             <div class="flex items-center gap-1">
               <Icon
                 name="mdi:file-document-outline"
                 class="text-muted-foreground !size-4"
               />
-              <span
-                v-if="site.completed_at"
-                class="text-muted-foreground text-sm"
-              >
-                ページ数: {{ site.number_of_crawl_page }}
-              </span>
-              <span v-else class="text-muted-foreground text-sm">
-                チェック予定ページ数: {{ site.number_of_crawl_page_job }}
+              <span class="text-muted-foreground text-sm">
+                ページ数: {{ site.max_pages }}
               </span>
             </div>
           </div>

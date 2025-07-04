@@ -20,7 +20,8 @@ definePageMeta({
 });
 
 type formValues = {
-  siteName: string;
+  name: string;
+  description?: string;
   crawlUrl: string;
   numberOfCrawlPage: number;
 };
@@ -46,7 +47,7 @@ const steps = [
  *************************************************/
 const formSchema = [
   z.object({
-    siteName: z
+    name: z
       .string({
         required_error: "サイト名を入力してください",
       })
@@ -59,6 +60,11 @@ const formSchema = [
       .url({
         message: "有効なURLを入力してください",
       }),
+    description: z
+      .string({
+        required_error: "サイトの説明を入力してください",
+      })
+      .optional(),
   }),
   z.object({
     numberOfCrawlPage: z.number({
@@ -90,9 +96,10 @@ const onSubmit = async (values: formValues) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        siteName: values.siteName,
-        siteUrl: new URL(values.crawlUrl).origin + "/",
         userId: user.value?.id,
+        name: values.name,
+        description: values.description || "",
+        siteUrl: new URL(values.crawlUrl).origin + "/",
         numberOfCrawlPage: String(values.numberOfCrawlPage),
       }),
     });
@@ -253,9 +260,9 @@ const onSubmit = async (values: formValues) => {
               />
 
               <template v-if="stepIndex === 1">
-                <FormField v-slot="{ componentField }" name="siteName">
+                <FormField v-slot="{ componentField }" name="name">
                   <FormItem>
-                    <FormLabel>サイト名</FormLabel>
+                    <FormLabel>プロジェクト名</FormLabel>
                     <FormControl>
                       <Input
                         type="text"
@@ -264,7 +271,32 @@ const onSubmit = async (values: formValues) => {
                       />
                     </FormControl>
                     <FormDescription>
-                      サイト一覧で表示されるサイト名を入力してください。
+                      サイトを管理するためのプロジェクト名を入力してください。
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+
+                <FormField v-slot="{ componentField }" name="description">
+                  <FormItem>
+                    <FormLabel
+                      >プロジェクトの説明
+                      <Badge
+                        variant="secondary"
+                        class="ml-1 rounded-full text-xs"
+                      >
+                        オプション
+                      </Badge>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="text"
+                        placeholder="例: 自社コーポレートサイトの品質チェック"
+                        v-bind="componentField"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      どんなサイトをチェックするか、どんなプロジェクトかを簡単に説明してください。
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -282,7 +314,8 @@ const onSubmit = async (values: formValues) => {
                     </FormControl>
                     <FormDescription>
                       サイトチェックを開始するURLを入力してください。例:
-                      https://example.com
+                      https://example.com <br />
+                      その配下全てをチェックします。
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -341,7 +374,7 @@ const onSubmit = async (values: formValues) => {
                   class="gradient-bg cursor-pointer"
                   :disabled="!meta.valid || isSubmitting"
                 >
-                  {{ isSubmitting ? "登録中..." : "チェックを開始する" }}
+                  {{ isSubmitting ? "登録中..." : "プロジェクトを登録する" }}
                 </Button>
               </div>
             </div>

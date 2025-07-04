@@ -1,8 +1,23 @@
 // Import the framework and instantiate it
 import Fastify from "fastify";
+import { createClient } from "@supabase/supabase-js";
+import { load } from "ts-dotenv";
 import cors from "@fastify/cors";
 import multiPart from "@fastify/multipart";
 import { crawlQueue } from "./queue/supabaseQueue.ts";
+
+/******************************
+ * for Supabase initialization
+ ******************************/
+const env = load(
+  {
+    SUPABASE_URL: String,
+    SUPABASE_KEY: String,
+  },
+  { path: ".env.local" }
+);
+
+const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
 
 /******************************
  * for Fastify initialization
@@ -28,23 +43,53 @@ server.get("/", async (request, reply) => {
 });
 
 server.post("/create-crawl-data", async (request, reply) => {
-  const { siteName, siteUrl, userId, numberOfCrawlPage } = request.body as {
-    siteName: string; // サイト名
-    siteUrl: string; // クロールするサイトのURL
-    userId: string; // ユーザーID
-    numberOfCrawlPage?: string; //何ページクロールするか
-  };
+  const { name, description, siteUrl, userId, numberOfCrawlPage } =
+    request.body as {
+      name: string; // サイト名
+      description?: string; // サイトの説明（オプション）
+      siteUrl: string; // クロールするサイトのURL
+      userId: string; // ユーザーID
+      numberOfCrawlPage?: string; //何ページクロールするか
+    };
 
   console.log("Received data:", {
-    siteName,
+    name,
+    description,
     siteUrl,
     userId,
     numberOfCrawlPage,
   });
 
   try {
+    // 1. プロジェクト作成(supabaseに保存)
+    const { data: projectData, error: projectError } = await supabase
+      .from("site_projects")
+      .insert([
+        {
+          user_id: userId,
+          name: name,
+          description: description || "",
+          site_url: siteUrl,
+          max_pages: numberOfCrawlPage || "20",
+        },
+      ])
+      .select()
+      .single();
+
+    if (projectError || !projectData) {
+      console.error("Error inserting project:", projectError);
+      return reply.status(500).send({
+        error: "Failed to create project.",
+        details: projectError?.message || "No data returned",
+      });
+    }
+
+    console.log("① Project created:", projectData);
+
+    // 2. ジョブをキューに追加
     const jobId = await crawlQueue.addJob({
-      siteName,
+      projectId: projectData.id, // プロジェクトIDを使用
+      name,
       siteUrl,
       userId,
       numberOfCrawlPage,
