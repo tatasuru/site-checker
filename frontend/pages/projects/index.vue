@@ -136,14 +136,14 @@ onBeforeUnmount(() => {
   <div id="dashboard" class="grid w-full gap-8">
     <div class="flex items-center justify-between">
       <PageTitle
-        title="サイト一覧"
-        description="登録したサイトの情報を表示します。"
+        title="プロジェクト一覧"
+        description="サイトのプロジェクトを管理します。"
         size="large"
       />
       <Button as-child variant="main">
-        <NuxtLink to="/sites/new" class="flex items-center gap-2">
+        <NuxtLink to="/projects/new" class="flex items-center gap-2">
           <Icon name="mdi-plus" />
-          新規登録
+          新規プロジェクトを作成
         </NuxtLink>
       </Button>
     </div>
@@ -153,7 +153,7 @@ onBeforeUnmount(() => {
         <CardHeader class="px-4">
           <CardTitle class="flex items-center justify-between">
             <NuxtLink
-              :to="`/sites/${site.id}/details`"
+              :to="`/projects/${site.id}/details`"
               class="w-full hover:underline hover:opacity-80"
             >
               {{ site.name }}

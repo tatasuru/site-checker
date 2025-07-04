@@ -120,7 +120,7 @@ const { data: crawlResult } = await useAsyncData<MySite | null>(
   <div id="dashboard" class="grid w-full gap-8">
     <div class="flex flex-col gap-4">
       <Button as-child variant="link" class="px-0">
-        <NuxtLink to="/sites" class="flex w-fit items-center gap-2">
+        <NuxtLink to="/projects" class="flex w-fit items-center gap-2">
           <Icon name="mdi-arrow-left" />
           サイト一覧へ戻る
         </NuxtLink>

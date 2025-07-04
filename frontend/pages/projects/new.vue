@@ -144,7 +144,7 @@ const onSubmit = async (values: formValues) => {
       />
 
       <Button as-child variant="link">
-        <NuxtLink to="/sites" class="flex items-center gap-2">
+        <NuxtLink to="/projects" class="flex items-center gap-2">
           <Icon name="mdi-arrow-left" />
           サイト一覧へ戻る
         </NuxtLink>

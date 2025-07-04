@@ -10,8 +10,8 @@ const items = [
     icon: "mdi:view-dashboard",
   },
   {
-    title: "サイト一覧",
-    url: "/sites",
+    title: "プロジェクト一覧",
+    url: "/projects",
     icon: "mdi:view-list",
   },
 ];
@@ -19,7 +19,7 @@ const items = [
 const actions = [
   {
     title: "新規サイト登録",
-    url: "/sites/new",
+    url: "/projects/new",
     icon: "mdi:plus",
   },
 ];
