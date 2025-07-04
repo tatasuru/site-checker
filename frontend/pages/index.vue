@@ -14,7 +14,7 @@ const login = async (providerName: "google" | "github") => {
     await client.auth.signInWithOAuth({
       provider: providerName,
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo: `${window.location.origin}/projects`,
       },
     });
   } catch (error) {

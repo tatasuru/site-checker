@@ -38,7 +38,7 @@ const steps = [
     step: 2,
     title: "詳細設定",
     description: "クロールするページ数や除外URLを設定します",
-    required: false,
+    required: true,
   },
 ];
 
@@ -68,7 +68,7 @@ const formSchema = [
   }),
   z.object({
     numberOfCrawlPage: z.number({
-      required_error: "クロール数を入力してください",
+      required_error: "契約しているページ数内で入力してください",
     }),
   }),
 ];
@@ -156,7 +156,7 @@ const onSubmit = async (values: formValues) => {
         <Stepper
           v-model="stepIndex"
           orientation="vertical"
-          class="mx-auto flex w-fit max-w-[200px] flex-col justify-start gap-10 p-2"
+          class="mx-auto flex w-fit max-w-[300px] min-w-[200px] flex-col justify-start gap-10 p-2"
         >
           <template v-for="step in steps" :key="step.step">
             <StepperItem
@@ -202,7 +202,7 @@ const onSubmit = async (values: formValues) => {
                 </Button>
               </StepperTrigger>
 
-              <div class="flex flex-col gap-1">
+              <div class="flex shrink-0 flex-col gap-1">
                 <StepperTitle
                   :class="[state === 'active' && 'text-primary']"
                   class="text-muted-foreground flex items-center gap-2 text-xs font-semibold transition lg:text-xs"
@@ -325,7 +325,7 @@ const onSubmit = async (values: formValues) => {
               <template v-if="stepIndex === 2">
                 <FormField v-slot="{ componentField }" name="numberOfCrawlPage">
                   <FormItem>
-                    <FormLabel>クロールページ数</FormLabel>
+                    <FormLabel>割り当てページ数</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -334,7 +334,7 @@ const onSubmit = async (values: formValues) => {
                       />
                     </FormControl>
                     <FormDescription>
-                      サイトから取得するページ数を指定してください（1-100）。
+                      チェックを行うページ数を契約しているページ数内で入力してください。
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

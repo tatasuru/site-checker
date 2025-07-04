@@ -150,7 +150,7 @@ onBeforeUnmount(() => {
 
     <div class="grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-6">
       <Card v-for="site in myProjects" :key="site.id" class="gap-2 py-4">
-        <CardHeader class="px-4">
+        <CardHeader class="gap-1 px-4">
           <CardTitle class="flex items-center justify-between">
             <NuxtLink
               :to="`/projects/${site.id}/details`"

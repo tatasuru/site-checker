@@ -5,11 +5,6 @@ const sidebarStore = useSidebarStore();
 // Menu items.
 const items = [
   {
-    title: "ダッシュボード",
-    url: "/dashboard",
-    icon: "mdi:view-dashboard",
-  },
-  {
     title: "プロジェクト一覧",
     url: "/projects",
     icon: "mdi:view-list",
@@ -18,7 +13,7 @@ const items = [
 
 const actions = [
   {
-    title: "新規サイト登録",
+    title: "新規プロジェクトを作成",
     url: "/projects/new",
     icon: "mdi:plus",
   },
@@ -91,9 +86,11 @@ const isActive = (url: string) => {
                 asChild
                 class="hover:bg-green/20 hover:text-green focus:bg-green/20 focus:text-green active:bg-green/20 active:text-green"
               >
-                <NuxtLink to="/sites/new">
-                  <Icon name="mdi:plus" />
-                  <span v-if="sidebarStore.isSidebarOpen">新規サイト登録</span>
+                <NuxtLink :to="action.url">
+                  <Icon :name="action.icon" />
+                  <span v-if="sidebarStore.isSidebarOpen">
+                    {{ action.title }}
+                  </span>
                 </NuxtLink>
               </SidebarMenuButton>
             </SidebarMenuItem>
