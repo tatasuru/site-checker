@@ -88,11 +88,11 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  --blue: oklch(0.8 0.15 180);
+  --blue: oklch(74.81% 0.12145 183.402);
   --light-blue: oklch(0.75 0.12 220);
   --purple: oklch(0.58 0.2 295);
   --pink: oklch(0.68 0.22 330);
-  --green: oklch(0.6901 0.19 144.34);
+  --green: oklch(70.189% 0.17399 144.858);
   --success: oklch(0.48 0.1514 143.56);
   --warning: oklch(0.73 0.1507 76.42);
   --error: oklch(0.51 0.2018 21.34);

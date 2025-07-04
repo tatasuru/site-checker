@@ -2,27 +2,12 @@
 const isLoading = ref<boolean>(false);
 const supabase = useSupabaseClient();
 const user = useSupabaseUser();
-
-interface MyProjects {
-  id: string;
-  user_id: string;
-  latest_crawl_result_id: string;
-  name: string;
-  description: string;
-  site_url: string;
-  crawl_frequency: string;
-  max_pages: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-
-  // from crawl_results
-  latest_crawl_result?: {
-    status: string;
-    error_message?: string;
-    completed_at?: string;
-  };
-}
+import {
+  getCheckStatusIcon,
+  getStatusColor,
+  translateStatus,
+} from "@/utils/status";
+import type { MyProjects } from "@/types/project";
 
 const myProjects = ref<MyProjects[]>([]);
 
@@ -58,36 +43,6 @@ async function fetchSiteProjects(userId: string) {
   }
 
   return data as MyProjects[];
-}
-
-function getIconName(status: string): string {
-  switch (status) {
-    case "waiting":
-      return "mdi:timer-sand";
-    case "processing":
-      return "mdi:sync";
-    case "completed":
-      return "mdi:check-circle";
-    case "failed":
-      return "mdi:alert-circle";
-    default:
-      return "mdi:help-circle";
-  }
-}
-
-function getStatusColor(status: string): string {
-  switch (status) {
-    case "waiting":
-      return "text-yellow-500";
-    case "processing":
-      return "text-blue-500";
-    case "completed":
-      return "text-green-500";
-    case "failed":
-      return "text-red-500";
-    default:
-      return "text-gray-500";
-  }
 }
 
 /************************
@@ -167,7 +122,9 @@ onBeforeUnmount(() => {
             >
               <Icon
                 :name="
-                  getIconName(site.latest_crawl_result?.status || 'unknown')
+                  getCheckStatusIcon(
+                    site.latest_crawl_result?.status || 'unknown',
+                  )
                 "
                 class="!size-3"
                 :class="
@@ -175,7 +132,11 @@ onBeforeUnmount(() => {
                   'animate-spin'
                 "
               />
-              {{ site.latest_crawl_result?.status || "unknown" }}
+              {{
+                site.latest_crawl_result?.status
+                  ? translateStatus(site.latest_crawl_result?.status)
+                  : "未チェック"
+              }}
             </Badge>
           </CardTitle>
           <CardDescription>
