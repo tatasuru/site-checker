@@ -61,8 +61,11 @@ export async function clearStorage() {
  * 1. クローラーを実行する関数
  *************************************/
 export async function executeCrawler(
-  siteUrl: string,
-  numberOfCrawlPage: string | undefined
+  siteUrl: string, // クロールするサイトURL
+  numberOfCrawlPage: string | undefined, // クロールするページ数
+  userId: string, // ユーザーID
+  projectId: string, // プロジェクトID
+  crawlResultsId: string // クロール結果データID
 ) {
   // ストレージをクリア
   await clearStorage();
@@ -89,7 +92,16 @@ export async function executeCrawler(
   );
 
   try {
-    const result = await crawler.run([siteUrl]);
+    const result = await crawler.run([
+      {
+        url: siteUrl,
+        userData: {
+          userId,
+          projectId,
+          crawlResultsId,
+        },
+      },
+    ]);
     console.log("Crawler result:", result);
 
     if (result.requestsFinished === 0) {

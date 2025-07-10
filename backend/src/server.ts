@@ -52,7 +52,7 @@ server.post("/create-crawl-data", async (request, reply) => {
       numberOfCrawlPage?: string; //何ページクロールするか
     };
 
-  console.log("Received data:", {
+  console.log("0. Received data:", {
     name,
     description,
     siteUrl,
@@ -63,14 +63,14 @@ server.post("/create-crawl-data", async (request, reply) => {
   try {
     // 1. プロジェクト作成(supabaseに保存)
     const { data: projectData, error: projectError } = await supabase
-      .from("site_projects")
+      .from("projects")
       .insert([
         {
           user_id: userId,
           name: name,
           description: description || "",
           site_url: siteUrl,
-          max_pages: numberOfCrawlPage || "20",
+          max_pages: numberOfCrawlPage ? parseInt(numberOfCrawlPage) : 20,
         },
       ])
       .select()
@@ -84,15 +84,35 @@ server.post("/create-crawl-data", async (request, reply) => {
       });
     }
 
-    console.log("① Project created:", projectData);
+    console.log("1. Project created:", projectData);
 
-    // 2. ジョブをキューに追加
+    // 2. crawl_resultsを作成（クロール開始前に準備）
+    const { data: crawlResultData, error: crawlResultError } = await supabase
+      .from("crawl_results")
+      .insert([
+        {
+          project_id: projectData.id,
+          site_url: siteUrl,
+          status: "in_progress",
+          total_pages: 0,
+          successful_pages: 0,
+          failed_pages: 0,
+          is_latest: true,
+          started_at: new Date().toISOString(),
+        },
+      ])
+      .select()
+      .single();
+
+    if (crawlResultError) throw crawlResultError;
+
+    console.log("2. Crawl result created:", crawlResultData);
+
+    // 3. ジョブをキューに追加
     const jobId = await crawlQueue.addJob({
-      projectId: projectData.id, // プロジェクトIDを使用
-      name,
-      siteUrl,
       userId,
-      numberOfCrawlPage,
+      projectId: projectData.id, // プロジェクトIDを使用
+      crawlResultDataId: crawlResultData.id, // クロール結果データIDを使用
     });
 
     return {

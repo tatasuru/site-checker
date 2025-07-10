@@ -22,17 +22,8 @@ definePageMeta({
 // get crawl results for the authenticated user
 async function fetchSiteProjects(userId: string) {
   const { data, error } = await supabase
-    .from("site_projects")
-    .select(
-      `
-      *,
-      latest_crawl_result:crawl_results!latest_crawl_result_id (
-        status,
-        error_message,
-        completed_at
-      )
-    `,
-    )
+    .from("projects")
+    .select("*")
     .eq("user_id", userId)
     .order("updated_at", { ascending: false })
     .limit(100);
@@ -59,25 +50,25 @@ onMounted(async () => {
   myProjects.value = await fetchSiteProjects(user.value.id);
   isLoading.value = false;
 
-  // Set up subscription after user is confirmed
-  subscription = supabase
-    .channel("custom-update-channel")
-    .on(
-      "postgres_changes",
-      {
-        event: "UPDATE",
-        schema: "public",
-        table: "site_projects",
-        filter: `user_id=eq.${user.value.id}`,
-      },
-      async (payload) => {
-        if (user.value) {
-          myProjects.value = await fetchSiteProjects(user.value.id);
-          console.log("Crawl results updated:", payload);
-        }
-      },
-    )
-    .subscribe();
+  // TODO:Set up subscription after user is confirmed
+  //   subscription = supabase
+  //     .channel("custom-update-channel")
+  //     .on(
+  //       "postgres_changes",
+  //       {
+  //         event: "UPDATE",
+  //         schema: "public",
+  //         table: "projects",
+  //         filter: `user_id=eq.${user.value.id}`,
+  //       },
+  //       async (payload) => {
+  //         if (user.value) {
+  //           myProjects.value = await fetchSiteProjects(user.value.id);
+  //           console.log("Crawl results updated:", payload);
+  //         }
+  //       },
+  //     )
+  //     .subscribe();
 });
 
 onBeforeUnmount(() => {

@@ -7,7 +7,7 @@ interface BaseProject {
   is_active: boolean;
 }
 
-// site_projects
+// projects
 export interface MyProjects extends BaseProject {
   id: string;
   latest_crawl_result_id?: string;

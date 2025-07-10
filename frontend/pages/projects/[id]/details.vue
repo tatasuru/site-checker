@@ -98,7 +98,7 @@ async function deleteProject(id: string) {
     isDeleting.value = true;
 
     const { error } = await supabase
-      .from("site_projects")
+      .from("projects")
       .delete()
       .eq("id", id)
       .eq("user_id", user.value.id);

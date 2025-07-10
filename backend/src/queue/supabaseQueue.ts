@@ -25,26 +25,21 @@ class SupabaseQueue extends EventEmitter {
 
   // ジョブ追加（Supabaseに保存）
   async addJob(data: {
-    projectId: string;
-    name: string;
-    siteUrl: string;
     userId: string;
-    numberOfCrawlPage?: string;
+    projectId: string; // プロジェクトID
+    crawlResultDataId: string; // クロール結果データID
   }): Promise<string> {
     console.log("ジョブ追加:", data);
     const { data: job, error } = await supabase
       .from("crawl_jobs")
       .insert([
         {
-          project_id: data.projectId,
           user_id: data.userId,
-          site_name: data.name,
-          site_url: data.siteUrl,
-          number_of_crawl_page: data.numberOfCrawlPage,
-          result: null,
-          error_message: null,
-          status: "waiting",
+          project_id: data.projectId,
+          crawl_results_id: data.crawlResultDataId,
+          status: "pending",
           progress: 0,
+          error_message: null,
         },
       ])
       .select()
@@ -52,7 +47,7 @@ class SupabaseQueue extends EventEmitter {
 
     if (error) throw error;
 
-    console.log(`ジョブ追加: ${job.id} - ${data.siteUrl}`);
+    console.log("ジョブ追加成功:", job);
 
     // 処理開始
     this.processQueue();
@@ -101,7 +96,6 @@ class SupabaseQueue extends EventEmitter {
       .update({
         status: "completed",
         progress: 100,
-        result,
         completed_at: new Date().toISOString(),
       })
       .eq("id", jobId);
@@ -133,8 +127,19 @@ class SupabaseQueue extends EventEmitter {
         // 待機中のジョブを取得
         const { data: jobs, error } = await supabase
           .from("crawl_jobs")
-          .select("*")
-          .eq("status", "waiting")
+          .select(
+            `*,
+            crawl_results!crawl_jobs_crawl_results_id_fkey(
+              site_url,
+              project_id,
+              status,
+              total_pages,
+              successful_pages,
+              failed_pages
+            )
+          `
+          )
+          .eq("status", "pending")
           .order("created_at", { ascending: true })
           .limit(1);
 
@@ -147,7 +152,7 @@ class SupabaseQueue extends EventEmitter {
         await supabase
           .from("crawl_jobs")
           .update({
-            status: "processing",
+            status: "running",
             started_at: new Date().toISOString(),
           })
           .eq("id", job.id);
@@ -178,7 +183,13 @@ class SupabaseQueue extends EventEmitter {
 
       // 初期進行状況: クロール開始
       await updateProgress(10);
-      await executeCrawler(job.site_url, job.number_of_crawl_page);
+      await executeCrawler(
+        job.crawl_results.site_url, // クロールするサイトURL
+        job.number_of_crawl_page, // クロールするページ数
+        job.user_id, // ユーザーID
+        job.project_id, // プロジェクトID
+        job.crawl_results_id // クロール結果データID
+      );
 
       // クロール成果物のマージ
       await updateProgress(60);
@@ -190,11 +201,21 @@ class SupabaseQueue extends EventEmitter {
       const { data, error } = await supabase
         .from("crawl_results")
         .update({
-          crawl_data: JSON.stringify(allData),
-          sitemap_data: JSON.stringify(vueFlowData),
-          number_of_crawl_page: allData.length,
+          project_id: job.project_id,
+          site_url: job.site_url,
+          status: "completed",
+          total_pages: allData.length,
+          successful_pages: allData.filter((item) => item.statusCode === 200)
+            .length,
+          failed_pages: allData.filter((item) => item.statusCode !== 200)
+            .length,
+          is_latest: true,
+          completed_at: new Date().toISOString(),
+          // TODO: ここで生成したデータを保存する
+          // crawl_data: JSON.stringify(allData),
+          // sitemap_data: JSON.stringify(vueFlowData),
         })
-        .eq("job_id", jobId)
+        .eq("id", job.crawl_results_id)
         .select();
 
       console.log("クロール結果アップロード:", data, error);
