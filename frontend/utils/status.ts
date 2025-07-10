@@ -5,7 +5,7 @@ export function translateStatus(status: string): string {
   switch (status) {
     case "waiting":
       return "待機中";
-    case "processing":
+    case "in_progress":
       return "処理中";
     case "completed":
       return "正常終了";
@@ -20,7 +20,7 @@ export function getCheckStatusIcon(status: string): string {
   switch (status) {
     case "waiting":
       return "mdi:timer-sand";
-    case "processing":
+    case "in_progress":
       return "mdi:sync";
     case "completed":
       return "mdi:check-circle";
@@ -35,7 +35,7 @@ export function getStatusColor(status: string): string {
   switch (status) {
     case "waiting":
       return "text-yellow-500";
-    case "processing":
+    case "in_progress":
       return "text-blue-500";
     case "completed":
       return "text-green";

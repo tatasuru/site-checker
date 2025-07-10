@@ -1,10 +1,13 @@
 interface BaseProject {
+  id: string;
   user_id: string;
+  name: string;
+  description: string;
   site_url: string;
-  description?: string;
-  crawl_frequency: "manual" | "daily" | "weekly" | "monthly";
-  max_pages: number;
+  max_pages: number | null;
   is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 // projects
@@ -16,11 +19,14 @@ export interface MyProjects extends BaseProject {
   updated_at: string;
 
   // from crawl_results
-  latest_crawl_result?: {
-    status: string;
-    error_message?: string;
-    completed_at?: string;
-  };
+  crawl_results?: {
+    id: string;
+    site_url: string;
+    status: "waiting" | "in_progress" | "completed" | "failed";
+    total_pages: number;
+    successful_pages: number;
+    failed_pages: number;
+  }[];
 }
 
 // project_overview

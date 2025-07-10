@@ -4,7 +4,7 @@ export interface CrawlJob {
   site_name: string;
   site_url: string;
   number_of_crawl_page?: string;
-  status: "waiting" | "processing" | "completed" | "failed";
+  status: "waiting" | "in_progress" | "completed" | "failed";
   progress: number;
   result?: any;
   error_message?: string;

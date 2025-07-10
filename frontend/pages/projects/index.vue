@@ -23,8 +23,19 @@ definePageMeta({
 async function fetchSiteProjects(userId: string) {
   const { data, error } = await supabase
     .from("projects")
-    .select("*")
+    .select(
+      `*,
+      crawl_results (
+        id,
+        site_url,
+        status,
+        total_pages,
+        successful_pages,
+        failed_pages
+      )`,
+    )
     .eq("user_id", userId)
+    .eq("crawl_results.is_latest", true) // 最新のcrawl_resultsのみ
     .order("updated_at", { ascending: false })
     .limit(100);
 
@@ -32,7 +43,6 @@ async function fetchSiteProjects(userId: string) {
     console.error("Error fetching crawl results:", error);
     return [];
   }
-
   return data as MyProjects[];
 }
 
@@ -51,24 +61,42 @@ onMounted(async () => {
   isLoading.value = false;
 
   // TODO:Set up subscription after user is confirmed
-  //   subscription = supabase
-  //     .channel("custom-update-channel")
-  //     .on(
-  //       "postgres_changes",
-  //       {
-  //         event: "UPDATE",
-  //         schema: "public",
-  //         table: "projects",
-  //         filter: `user_id=eq.${user.value.id}`,
-  //       },
-  //       async (payload) => {
-  //         if (user.value) {
-  //           myProjects.value = await fetchSiteProjects(user.value.id);
-  //           console.log("Crawl results updated:", payload);
-  //         }
-  //       },
-  //     )
-  //     .subscribe();
+  subscription = supabase
+    .channel("project-updates")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "projects",
+        filter: `user_id=eq.${user.value.id}`,
+      },
+      async (payload) => {
+        console.log("Projects updated:", payload);
+        if (user.value) {
+          myProjects.value = await fetchSiteProjects(user.value.id);
+        }
+      },
+    )
+    // .on(
+    //   "postgres_changes",
+    //   {
+    //     event: "*",
+    //     schema: "public",
+    //     table: "crawl_results",
+    //   },
+    //   async (payload: { new?: { project_id?: string } }) => {
+    //     console.log("Crawl results updated:", payload);
+    //     // If the project_id in the new crawl result matches any of the user's projects, refresh the projects
+    //     if (
+    //       user.value &&
+    //       myProjects.value.find((p) => p.id === payload.new?.project_id)
+    //     ) {
+    //       myProjects.value = await fetchSiteProjects(user.value.id);
+    //     }
+    //   },
+    // )
+    .subscribe();
 });
 
 onBeforeUnmount(() => {
@@ -108,24 +136,24 @@ onBeforeUnmount(() => {
               variant="outline"
               class="items-center gap-1 rounded-full"
               :class="
-                getStatusColor(site.latest_crawl_result?.status || 'unknown')
+                getStatusColor(site.crawl_results?.[0].status || 'unknown')
               "
             >
               <Icon
                 :name="
                   getCheckStatusIcon(
-                    site.latest_crawl_result?.status || 'unknown',
+                    site.crawl_results?.[0].status || 'unknown',
                   )
                 "
                 class="!size-3"
                 :class="
-                  site.latest_crawl_result?.status === 'processing' &&
+                  site.crawl_results?.[0].status === 'in_progress' &&
                   'animate-spin'
                 "
               />
               {{
-                site.latest_crawl_result?.status
-                  ? translateStatus(site.latest_crawl_result?.status)
+                site.crawl_results?.[0].status
+                  ? translateStatus(site.crawl_results?.[0].status)
                   : "未チェック"
               }}
             </Badge>
@@ -166,7 +194,7 @@ onBeforeUnmount(() => {
                 class="text-muted-foreground !size-4"
               />
               <span class="text-muted-foreground text-sm">
-                ページ数: {{ site.max_pages }}
+                ページ数: {{ site.crawl_results?.[0].total_pages || 0 }}
               </span>
             </div>
           </div>
