@@ -93,7 +93,7 @@ server.post("/create-crawl-data", async (request, reply) => {
         {
           project_id: projectData.id,
           site_url: siteUrl,
-          status: "in_progress",
+          status: "waiting", // 初期状態は「waiting」
           total_pages: 0,
           successful_pages: 0,
           failed_pages: 0,

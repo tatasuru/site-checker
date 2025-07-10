@@ -159,6 +159,12 @@ class SupabaseQueue extends EventEmitter {
           })
           .eq("id", job.id);
 
+        // crawl_resultsのステータスも更新
+        await supabase
+          .from("crawl_results")
+          .update({ status: "in_progress" })
+          .eq("id", job.crawl_results_id);
+
         // ジョブ処理開始
         this.processJob(job);
       }
