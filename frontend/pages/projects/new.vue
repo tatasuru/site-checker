@@ -23,7 +23,7 @@ type formValues = {
   name: string;
   description?: string;
   crawlUrl: string;
-  numberOfCrawlPage: number;
+  maxPages: number;
 };
 
 const stepIndex = ref<number>(1);
@@ -67,9 +67,13 @@ const formSchema = [
       .optional(),
   }),
   z.object({
-    numberOfCrawlPage: z.number({
-      required_error: "契約しているページ数内で入力してください",
-    }),
+    maxPages: z
+      .number({
+        required_error: "契約しているページ数内で入力してください",
+      })
+      .min(1, "ページ数は1以上で入力してください")
+      .max(1000, "ページ数は1000以下で入力してください")
+      .optional(),
   }),
 ];
 
@@ -100,7 +104,7 @@ const onSubmit = async (values: formValues) => {
         name: values.name,
         description: values.description || "",
         siteUrl: new URL(values.crawlUrl).origin + "/",
-        numberOfCrawlPage: String(values.numberOfCrawlPage),
+        maxPages: values.maxPages || null,
       }),
     });
 
@@ -324,7 +328,7 @@ const onSubmit = async (values: formValues) => {
               </template>
 
               <template v-if="stepIndex === 2">
-                <FormField v-slot="{ componentField }" name="numberOfCrawlPage">
+                <FormField v-slot="{ componentField }" name="maxPages">
                   <FormItem>
                     <FormLabel>割り当てページ数</FormLabel>
                     <FormControl>

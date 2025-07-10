@@ -62,7 +62,7 @@ export async function clearStorage() {
  *************************************/
 export async function executeCrawler(
   siteUrl: string, // クロールするサイトURL
-  numberOfCrawlPage: string | undefined, // クロールするページ数
+  maxPages: string | null, // クロールするページ数
   userId: string, // ユーザーID
   projectId: string, // プロジェクトID
   crawlResultsId: string // クロール結果データID
@@ -79,7 +79,7 @@ export async function executeCrawler(
   const crawler = new PlaywrightCrawler(
     {
       requestHandler: router,
-      maxRequestsPerCrawl: Number(numberOfCrawlPage) || 20,
+      maxRequestsPerCrawl: Number(maxPages) || 20,
       headless: true,
       maxRequestRetries: 2,
       maxConcurrency: 10,
@@ -87,9 +87,7 @@ export async function executeCrawler(
     config
   );
 
-  console.log(
-    `Starting crawler for ${siteUrl} with max ${numberOfCrawlPage || 20}`
-  );
+  console.log(`Starting crawler for ${siteUrl} with max ${maxPages || 20}`);
 
   try {
     const result = await crawler.run([
@@ -111,7 +109,7 @@ export async function executeCrawler(
     return {
       message: "Crawling completed successfully!",
       siteUrl,
-      numberOfCrawlPage: Number(numberOfCrawlPage) || 20,
+      numberOfCrawlPage: Number(maxPages) || 20,
     };
   } finally {
     // 重要: リソースを明示的に解放

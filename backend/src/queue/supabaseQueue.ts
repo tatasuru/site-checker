@@ -28,6 +28,7 @@ class SupabaseQueue extends EventEmitter {
     userId: string;
     projectId: string; // プロジェクトID
     crawlResultDataId: string; // クロール結果データID
+    maxPages?: number; // クロールするページ数（オプション）
   }): Promise<string> {
     console.log("ジョブ追加:", data);
     const { data: job, error } = await supabase
@@ -40,6 +41,7 @@ class SupabaseQueue extends EventEmitter {
           status: "pending",
           progress: 0,
           error_message: null,
+          max_pages: data.maxPages || null, // デフォルトは20ページ
         },
       ])
       .select()
@@ -185,7 +187,7 @@ class SupabaseQueue extends EventEmitter {
       await updateProgress(10);
       await executeCrawler(
         job.crawl_results.site_url, // クロールするサイトURL
-        job.number_of_crawl_page, // クロールするページ数
+        job.max_pages, // クロールするページ数
         job.user_id, // ユーザーID
         job.project_id, // プロジェクトID
         job.crawl_results_id // クロール結果データID

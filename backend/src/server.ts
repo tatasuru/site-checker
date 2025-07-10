@@ -43,21 +43,20 @@ server.get("/", async (request, reply) => {
 });
 
 server.post("/create-crawl-data", async (request, reply) => {
-  const { name, description, siteUrl, userId, numberOfCrawlPage } =
-    request.body as {
-      name: string; // サイト名
-      description?: string; // サイトの説明（オプション）
-      siteUrl: string; // クロールするサイトのURL
-      userId: string; // ユーザーID
-      numberOfCrawlPage?: string; //何ページクロールするか
-    };
+  const { name, description, siteUrl, userId, maxPages } = request.body as {
+    name: string; // サイト名
+    description?: string; // サイトの説明（オプション）
+    siteUrl: string; // クロールするサイトのURL
+    userId: string; // ユーザーID
+    maxPages?: number | null; //何ページクロールするか
+  };
 
   console.log("0. Received data:", {
     name,
     description,
     siteUrl,
     userId,
-    numberOfCrawlPage,
+    maxPages,
   });
 
   try {
@@ -70,7 +69,8 @@ server.post("/create-crawl-data", async (request, reply) => {
           name: name,
           description: description || "",
           site_url: siteUrl,
-          max_pages: numberOfCrawlPage ? parseInt(numberOfCrawlPage) : 20,
+          // TODO: maxPagesのデフォルト値を設定してるが本番ではnullにする
+          max_pages: maxPages ? maxPages : 20,
         },
       ])
       .select()
@@ -113,6 +113,7 @@ server.post("/create-crawl-data", async (request, reply) => {
       userId,
       projectId: projectData.id, // プロジェクトIDを使用
       crawlResultDataId: crawlResultData.id, // クロール結果データIDを使用
+      maxPages: maxPages ? maxPages : 20, // クロールするページ数
     });
 
     return {
