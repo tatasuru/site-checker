@@ -26,6 +26,7 @@ export interface MyProjects extends BaseProject {
     total_pages: number;
     successful_pages: number;
     failed_pages: number;
+    completed_at: string | null;
   }[];
 }
 

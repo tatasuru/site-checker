@@ -181,7 +181,7 @@ class SupabaseQueue extends EventEmitter {
     this.processingJobs.add(jobId);
 
     try {
-      console.log(`ジョブ処理開始: ${jobId} - ${job.site_url}`);
+      console.log(`ジョブ処理開始: ${jobId} - ${job.crawl_results.site_url}`);
 
       // 進行状況更新関数
       const updateProgress = async (progress: number) => {

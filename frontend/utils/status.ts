@@ -16,7 +16,14 @@ export function translateStatus(status: string): string {
   }
 }
 
-export function getCheckStatusIcon(status: string): string {
+export function getCheckStatusIcon(
+  status:
+    | "waiting"
+    | "in_progress"
+    | "completed"
+    | "failed"
+    | "unknown" = "unknown",
+): string {
   switch (status) {
     case "waiting":
       return "mdi:timer-sand";

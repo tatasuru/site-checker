@@ -5,7 +5,7 @@ import {
   getCheckStatusIcon,
   getStatusColor,
 } from "@/utils/status";
-import type { MyProjectOverview } from "@/types/project";
+import type { MyProjects } from "@/types/project";
 
 definePageMeta({
   middleware: "auth",
@@ -17,7 +17,7 @@ const user = useSupabaseUser();
 const route = useRoute();
 const progress = ref<number>(0);
 const isLoading = ref<boolean>(true); // 初期値をtrueに
-const myProject = ref<MyProjectOverview | null>(null);
+const myProject = ref<MyProjects | null>(null);
 const isDeleting = ref<boolean>(false);
 
 /**********************************
@@ -32,43 +32,46 @@ const cardContents = computed(() => {
       icon: "mdi:attachment",
       description: myProject.value.site_url || "URLが設定されていません",
       buttonLabel: "サイトチェック設定へ",
-      buttonLink: `/sites/${myProject.value.project_id}/settings`,
+      buttonLink: `/sites/${myProject.value.id}/settings`,
     },
     {
       title: "チェックステータス",
-      icon: getCheckStatusIcon(myProject.value.latest_status || "unknown"),
-      description: myProject.value.latest_status
-        ? translateStatus(myProject.value.latest_status)
+      icon: getCheckStatusIcon(
+        myProject.value.crawl_results?.[0].status || "unknown",
+      ),
+      description: myProject.value.crawl_results?.[0].status
+        ? translateStatus(
+            myProject.value.crawl_results?.[0].status || "unknown",
+          )
         : "ステータスが設定されていません",
       buttonLabel: "サイトチェック設定へ",
-      buttonLink: `/sites/${myProject.value.project_id}/settings`,
+      buttonLink: `/sites/${myProject.value.id}/settings`,
     },
     {
       title: "チェックページ数",
       icon: "mdi:book-open-page-variant",
-      description: myProject.value.latest_page_count
-        ? `${myProject.value.latest_page_count} ページ`
+      description: myProject.value.crawl_results?.[0].total_pages
+        ? `${myProject.value.crawl_results?.[0].total_pages} ページ`
         : "チェックされたページはありません",
       buttonLabel: "サイトチェック設定へ",
-      buttonLink: `/sites/${myProject.value.project_id}/settings`,
+      buttonLink: `/sites/${myProject.value.id}/settings`,
     },
     {
       title: "最新のチェック日時",
       icon: "mdi:clock",
-      description: myProject.value.latest_completed_at
-        ? new Date(myProject.value.latest_completed_at).toLocaleString(
-            "ja-JP",
-            {
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-            },
-          )
+      description: myProject.value.crawl_results?.[0].completed_at
+        ? new Date(
+            myProject.value.crawl_results?.[0].completed_at,
+          ).toLocaleString("ja-JP", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
         : "まだチェックが実行されていません",
       buttonLabel: "サイトチェック設定へ",
-      buttonLink: `/sites/${myProject.value.project_id}/settings`,
+      buttonLink: `/sites/${myProject.value.id}/settings`,
     },
   ];
 });
@@ -116,19 +119,30 @@ async function deleteProject(id: string) {
   }
 }
 
-async function fetchProjectOverview(
-  id: string,
-): Promise<MyProjectOverview | null> {
+async function fetchProjectDetails(id: string): Promise<MyProjects | null> {
   try {
     const { data, error } = await supabase
-      .from("project_overview")
-      .select("*")
-      .eq("project_id", id)
+      .from("projects")
+      .select(
+        `*,
+      crawl_results (
+        id,
+        site_url,
+        status,
+        total_pages,
+        successful_pages,
+        failed_pages,
+        completed_at
+      )`,
+      )
+      .eq("id", id)
+      .eq("crawl_results.is_latest", true) // 最新のcrawl_resultsのみ
+      .order("updated_at", { ascending: false })
       .limit(1);
 
     if (error) throw error;
 
-    return data && data.length > 0 ? (data[0] as MyProjectOverview) : null;
+    return data && data.length > 0 ? (data[0] as MyProjects) : null;
   } catch (error) {
     console.error("Error fetching project overview:", error);
     toast.error("プロジェクト情報の取得に失敗しました");
@@ -150,28 +164,49 @@ onMounted(async () => {
 
   try {
     // プロジェクトデータを取得
-    myProject.value = await fetchProjectOverview(route.params.id as string);
+    myProject.value = await fetchProjectDetails(route.params.id as string);
 
     // リアルタイム監視を設定
     subscription = supabase
-      .channel(`project-overview-${route.params.id}`)
+      .channel(`project-${route.params.id}`)
       .on(
         "postgres_changes",
         {
           event: "UPDATE",
           schema: "public",
-          table: "project_overview",
-          filter: `project_id=eq.${route.params.id}`,
+          table: "projects",
+          filter: `id=eq.${route.params.id}`,
         },
         async (payload) => {
           if (user.value) {
-            const updatedProject = await fetchProjectOverview(
+            const updatedProject = await fetchProjectDetails(
               route.params.id as string,
             );
             if (updatedProject) {
               myProject.value = updatedProject;
               console.log("Project overview updated:", payload);
             }
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "crawl_results",
+        },
+        async (payload: { new?: { project_id?: string } }) => {
+          console.log("Crawl results updated:", payload);
+          // If the project_id in the new crawl result matches any of the user's projects, refresh the projects
+          if (
+            user.value &&
+            myProject.value &&
+            myProject.value.id === payload.new?.project_id
+          ) {
+            myProject.value = await fetchProjectDetails(
+              route.params.id as string,
+            );
           }
         },
       )
@@ -218,7 +253,7 @@ onBeforeUnmount(() => {
         <!-- データ読み込み完了後 -->
         <PageTitle
           v-else
-          :title="myProject?.project_name || 'プロジェクトが見つかりません'"
+          :title="myProject?.name || 'プロジェクトが見つかりません'"
           :description="
             myProject?.description || 'プロジェクトの説明がありません'
           "
@@ -315,12 +350,14 @@ onBeforeUnmount(() => {
                   :class="[
                     '!size-5 transition-all duration-200',
                     card.title === 'チェックステータス'
-                      ? getStatusColor(myProject?.latest_status || 'unknown')
+                      ? getStatusColor(
+                          myProject?.crawl_results?.[0].status || 'unknown',
+                        )
                       : 'text-green',
                     {
                       'animate-spin':
-                        myProject?.latest_status === 'processing' &&
-                        card.title === 'チェックステータス',
+                        myProject?.crawl_results?.[0].status ===
+                          'in_progress' && card.title === 'チェックステータス',
                     },
                   ]"
                 />
@@ -330,7 +367,9 @@ onBeforeUnmount(() => {
                   class="text-base font-semibold tracking-wider transition-all duration-200"
                   :class="
                     card.title === 'チェックステータス'
-                      ? getStatusColor(myProject?.latest_status || 'unknown')
+                      ? getStatusColor(
+                          myProject?.crawl_results?.[0].status || 'unknown',
+                        )
                       : 'text-green'
                   "
                 >

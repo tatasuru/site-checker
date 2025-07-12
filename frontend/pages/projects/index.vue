@@ -78,24 +78,24 @@ onMounted(async () => {
         }
       },
     )
-    // .on(
-    //   "postgres_changes",
-    //   {
-    //     event: "*",
-    //     schema: "public",
-    //     table: "crawl_results",
-    //   },
-    //   async (payload: { new?: { project_id?: string } }) => {
-    //     console.log("Crawl results updated:", payload);
-    //     // If the project_id in the new crawl result matches any of the user's projects, refresh the projects
-    //     if (
-    //       user.value &&
-    //       myProjects.value.find((p) => p.id === payload.new?.project_id)
-    //     ) {
-    //       myProjects.value = await fetchSiteProjects(user.value.id);
-    //     }
-    //   },
-    // )
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "crawl_results",
+      },
+      async (payload: { new?: { project_id?: string } }) => {
+        console.log("Crawl results updated:", payload);
+        // If the project_id in the new crawl result matches any of the user's projects, refresh the projects
+        if (
+          user.value &&
+          myProjects.value.find((p) => p.id === payload.new?.project_id)
+        ) {
+          myProjects.value = await fetchSiteProjects(user.value.id);
+        }
+      },
+    )
     .subscribe();
 });
 
