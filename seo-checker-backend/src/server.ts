@@ -32,6 +32,30 @@ server.get("/", async (request, reply) => {
   return { message: "Hello, site checker backend with Fastify!" };
 });
 
+server.post("/completed-crawler", async (request, reply) => {
+  try {
+    console.log("Webhook受信:", JSON.stringify(request.body, null, 2));
+    console.log("Headers:", JSON.stringify(request.headers, null, 2));
+
+    // Webhookペイロードの解析
+    const payload = request.body as any;
+
+    if (payload && payload.record && payload.record.status) {
+      if (payload.record.status === "completed") {
+        console.log("Crawler completed for record ID:", payload.record.id);
+      }
+    }
+
+    return reply.status(200).send({
+      message: "Webhook received successfully",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("Webhook処理中にエラー:", error);
+    return reply.status(500).send({ error: "Internal Server Error" });
+  }
+});
+
 /******************************
  * run server
  ******************************/

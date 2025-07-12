@@ -58,12 +58,7 @@ onMounted(async () => {
 
   isLoading.value = true;
   myProjects.value = await fetchSiteProjects(user.value.id);
-
-  // TODO: remove it
-  // Simulate loading delay
-  setTimeout(() => {
-    isLoading.value = false;
-  }, 1000);
+  isLoading.value = false;
 
   // TODO:Set up subscription after user is confirmed
   subscription = supabase
