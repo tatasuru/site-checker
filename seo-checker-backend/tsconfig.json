@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    // コンパイル後のJavaScriptのバージョン
+    "target": "ESNext",
+    // モジュールシステム
+    "module": "NodeNext",
+    // .ts拡張子を持つファイルのインポートを可能に
+    "allowImportingTsExtensions": true,
+    // モジュール解決の際に、TypeScriptの構文を厳密に解釈
+    "verbatimModuleSyntax": false,
+    // すべての厳格な型チェックオプションを有効に
+    "strict": true,
+    // TypeScriptファイルを出力しない（ts-nodeやBun、Denoで直接実行）
+    "noEmit": true,
+
+    // モジュール解決の設定
+    "moduleResolution": "NodeNext",
+    "resolveJsonModule": true,
+    // CommonJSライブラリのデフォルトインポートを許可
+    "allowSyntheticDefaultImports": true,
+    // CommonJSとESModulesの相互運用を改善
+    "esModuleInterop": true,
+    // ファイル名の大文字小文字を厳密チェック
+    "forceConsistentCasingInFileNames": true,
+    // node_modules内の型定義ファイルの型チェックをスキップ
+    "skipLibCheck": true
+  },
+  "ts-node": {
+    "esm": true
+  }
+}

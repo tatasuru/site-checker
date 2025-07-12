@@ -39,7 +39,7 @@ server.register(cors, {
 // });
 
 server.get("/", async (request, reply) => {
-  return { message: "Hello, Fastify!" };
+  return { message: "Hello, crawler backend with Fastify!" };
 });
 
 server.post("/create-crawl-data", async (request, reply) => {
