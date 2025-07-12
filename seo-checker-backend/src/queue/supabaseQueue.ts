@@ -1,11 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { EventEmitter } from "events";
 import { load } from "ts-dotenv";
-import {
-  executeCrawler,
-  mergeDatasetFiles,
-  generateVueFlowData,
-} from "../crawler/index.ts"; // クローラー実行関数
+import { executeSeoCheck } from "../seo-checker/index.ts"; // クローラー実行関数
 
 const env = load(
   {
@@ -32,7 +28,7 @@ class SupabaseQueue extends EventEmitter {
   }): Promise<string> {
     console.log("ジョブ追加:", data);
     const { data: job, error } = await supabase
-      .from("crawl_jobs")
+      .from("seo_check_jobs")
       .insert([
         {
           user_id: data.userId,
@@ -60,7 +56,7 @@ class SupabaseQueue extends EventEmitter {
   // ジョブ取得
   async getJob(jobId: string) {
     const { data, error } = await supabase
-      .from("crawl_jobs")
+      .from("seo_check_jobs")
       .select("*")
       .eq("id", jobId)
       .single();
@@ -72,7 +68,7 @@ class SupabaseQueue extends EventEmitter {
   // ユーザーのジョブ一覧
   async getUserJobs(userId: string) {
     const { data, error } = await supabase
-      .from("crawl_jobs")
+      .from("seo_check_jobs")
       .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
@@ -84,7 +80,7 @@ class SupabaseQueue extends EventEmitter {
   // 進行状況更新
   async updateJobProgress(jobId: string, progress: number) {
     const { error } = await supabase
-      .from("crawl_jobs")
+      .from("seo_check_jobs")
       .update({ progress })
       .eq("id", jobId);
 
@@ -94,7 +90,7 @@ class SupabaseQueue extends EventEmitter {
   // ジョブ完了
   async completeJob(jobId: string, result: any) {
     const { error } = await supabase
-      .from("crawl_jobs")
+      .from("seo_check_jobs")
       .update({
         status: "completed",
         progress: 100,
@@ -108,7 +104,7 @@ class SupabaseQueue extends EventEmitter {
   // ジョブ失敗
   async failJob(jobId: string, errorMessage: string) {
     const { error } = await supabase
-      .from("crawl_jobs")
+      .from("seo_check_jobs")
       .update({
         status: "failed",
         error_message: errorMessage,
@@ -128,10 +124,10 @@ class SupabaseQueue extends EventEmitter {
       while (this.processingJobs.size < this.concurrency) {
         // 待機中のジョブを取得
         const { data: jobs, error } = await supabase
-          .from("crawl_jobs")
+          .from("seo_check_jobs")
           .select(
             `*,
-            crawl_results!crawl_jobs_crawl_results_id_fkey(
+            crawl_results!seo_check_jobs_crawl_results_id_fkey(
               site_url,
               project_id,
               status,
@@ -152,7 +148,7 @@ class SupabaseQueue extends EventEmitter {
 
         // 処理中に設定
         await supabase
-          .from("crawl_jobs")
+          .from("seo_check_jobs")
           .update({
             status: "running",
             started_at: new Date().toISOString(),
@@ -191,49 +187,28 @@ class SupabaseQueue extends EventEmitter {
 
       // 初期進行状況: クロール開始
       await updateProgress(10);
-      await executeCrawler(
-        job.crawl_results.site_url, // クロールするサイトURL
-        job.max_pages, // クロールするページ数
-        job.user_id, // ユーザーID
-        job.project_id, // プロジェクトID
-        job.crawl_results_id // クロール結果データID
-      );
+      // TODO: ここでSEOチェックを実行
+      await executeSeoCheck();
 
       // クロール成果物のマージ
       await updateProgress(60);
-      const allData = await mergeDatasetFiles();
 
       // VueFlowデータ生成とSupabaseへのアップロード
       await updateProgress(80);
-      const vueFlowData = await generateVueFlowData(allData);
+
+      // TODO: SEOチェック結果をSupabaseにアップロード
       const { data, error } = await supabase
         .from("crawl_results")
-        .update({
-          project_id: job.project_id,
-          site_url: job.site_url,
-          status: "completed",
-          total_pages: allData.length,
-          successful_pages: allData.filter(
-            (item: { statusCode: number }) => item.statusCode === 200
-          ).length,
-          failed_pages: allData.filter(
-            (item: { statusCode: number }) => item.statusCode !== 200
-          ).length,
-          is_latest: true,
-          completed_at: new Date().toISOString(),
-          // TODO: ここで生成したデータを保存する
-          // crawl_data: JSON.stringify(allData),
-          // sitemap_data: JSON.stringify(vueFlowData),
-        })
+        .update({})
         .eq("id", job.crawl_results_id)
         .select();
 
-      console.log("クロール結果アップロード:", data, error);
+      console.log("SEOチェック結果:", data);
 
       if (error) throw error;
 
       // 完了
-      const result = { message: "クロール処理が完了しました" };
+      const result = { message: "SEO チェックが終わりました。" };
       await this.completeJob(jobId, result);
 
       console.log(`ジョブ完了: ${jobId}`);
