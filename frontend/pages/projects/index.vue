@@ -107,8 +107,8 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div id="projects" class="grid w-full gap-8">
-    <div class="flex items-center justify-between">
+  <div id="projects" class="grid h-full w-full grid-rows-[auto_1fr] gap-8">
+    <div class="flex h-fit items-center justify-between">
       <PageTitle
         title="プロジェクト一覧"
         description="サイトのプロジェクトを管理します。"
@@ -122,7 +122,10 @@ onBeforeUnmount(() => {
       </Button>
     </div>
 
-    <div class="grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-6">
+    <div
+      v-if="myProjects.length"
+      class="grid h-fit grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-6"
+    >
       <Card v-for="site in myProjects" :key="site.id" class="gap-2 py-4">
         <CardHeader class="gap-1 px-4">
           <CardTitle class="flex items-center justify-between">
@@ -200,6 +203,22 @@ onBeforeUnmount(() => {
           </div>
         </CardFooter>
       </Card>
+    </div>
+
+    <div
+      v-else
+      class="flex h-full flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-8"
+    >
+      <p class="text-muted-foreground text-sm">
+        プロジェクトはまだありません。
+      </p>
+
+      <Button as-child variant="main">
+        <NuxtLink to="/projects/new" class="flex items-center gap-2">
+          <Icon name="mdi-plus" />
+          新規プロジェクトを作成
+        </NuxtLink>
+      </Button>
     </div>
   </div>
 </template>
