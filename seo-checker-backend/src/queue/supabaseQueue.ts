@@ -24,9 +24,38 @@ class SupabaseQueue extends EventEmitter {
     userId: string;
     projectId: string; // プロジェクトID
     crawlResultDataId: string; // クロール結果データID
-    maxPages?: number; // クロールするページ数（オプション）
   }): Promise<string> {
     console.log("ジョブ追加:", data);
+
+    // 重複チェック: 同じcrawl_results_idで既存のジョブがないか確認
+    const { data: existingJob, error: checkError } = await supabase
+      .from("seo_check_jobs")
+      .select("id, status")
+      .eq("crawl_results_id", data.crawlResultDataId)
+      .eq("user_id", data.userId)
+      .maybeSingle();
+
+    if (checkError) {
+      console.error("重複チェック中にエラー:", checkError);
+      throw checkError;
+    }
+
+    // 既存のジョブが見つかった場合
+    if (existingJob) {
+      console.log("既存のジョブが見つかりました:", existingJob);
+      // pending, running状態のジョブが既にある場合は重複作成を防ぐ
+      if (
+        existingJob.status === "pending" ||
+        existingJob.status === "running"
+      ) {
+        console.log(
+          "既存のアクティブなジョブがあるため、新規作成をスキップ:",
+          existingJob.id
+        );
+        return existingJob.id;
+      }
+    }
+
     const { data: job, error } = await supabase
       .from("seo_check_jobs")
       .insert([
@@ -37,7 +66,6 @@ class SupabaseQueue extends EventEmitter {
           status: "pending",
           progress: 0,
           error_message: null,
-          max_pages: data.maxPages || null, // デフォルトは20ページ
         },
       ])
       .select()
@@ -117,8 +145,16 @@ class SupabaseQueue extends EventEmitter {
 
   // キュー処理
   private async processQueue() {
-    if (this.isProcessing) return;
+    if (this.isProcessing) {
+      console.log("キュー処理は既に実行中です - スキップ");
+      return;
+    }
+
     this.isProcessing = true;
+    const timestamp = new Date().toISOString();
+    console.log(
+      `[${timestamp}] キュー処理開始 (処理中ジョブ数: ${this.processingJobs.size}/${this.concurrency})`
+    );
 
     try {
       while (this.processingJobs.size < this.concurrency) {
@@ -127,104 +163,174 @@ class SupabaseQueue extends EventEmitter {
           .from("seo_check_jobs")
           .select(
             `*,
-            crawl_results!seo_check_jobs_crawl_results_id_fkey(
-              site_url,
-              project_id,
-              status,
-              total_pages,
-              successful_pages,
-              failed_pages
-            )
-          `
+              crawl_results!site_check_jobs_crawl_results_id_fkey(
+                id,
+                site_url,
+                total_pages,
+                successful_pages,
+                crawl_data(
+                  page_url,
+                  raw_html,
+                  status_code,
+                  error_message,
+                  created_at
+                )
+              )
+            `
           )
           .eq("status", "pending")
           .order("created_at", { ascending: true })
           .limit(1);
 
         if (error) throw error;
-        if (!jobs || jobs.length === 0) break;
+        if (!jobs || jobs.length === 0) {
+          console.log(`[${timestamp}] 処理待ちのジョブがありません`);
+          break;
+        }
 
         const job = jobs[0];
+        console.log(
+          `[${timestamp}] 処理するジョブ: ${job.id} (crawl_results_id: ${job.crawl_results_id})`
+        );
+
+        // 重複処理防止: 既に処理中でないかチェック
+        if (this.processingJobs.has(job.id)) {
+          console.warn(
+            `[${timestamp}] ジョブ ${job.id} は既に処理中です - スキップ`
+          );
+          continue;
+        }
 
         // 処理中に設定
-        await supabase
+        const { error: updateError } = await supabase
           .from("seo_check_jobs")
           .update({
             status: "running",
             started_at: new Date().toISOString(),
           })
-          .eq("id", job.id);
+          .eq("id", job.id)
+          .eq("status", "pending"); // pending状態の場合のみ更新
 
-        // crawl_resultsのステータスも更新
-        await supabase
-          .from("crawl_results")
-          .update({ status: "in_progress" })
-          .eq("id", job.crawl_results_id);
+        if (updateError) {
+          console.error(
+            `[${timestamp}] ジョブ ${job.id} のステータス更新に失敗:`,
+            updateError
+          );
+          continue;
+        }
 
-        // ジョブ処理開始
+        // ジョブ処理開始 (非同期)
         this.processJob(job);
       }
     } catch (error) {
-      console.error("キュー処理エラー:", error);
+      console.error(`[${timestamp}] キュー処理エラー:`, error);
+    } finally {
+      this.isProcessing = false;
+      console.log(`[${timestamp}] キュー処理終了`);
     }
-
-    this.isProcessing = false;
   }
 
   // 個別ジョブ処理
   private async processJob(job: any) {
     const jobId = job.id;
+    const timestamp = new Date().toISOString();
+
     this.processingJobs.add(jobId);
+    console.log(
+      `[${timestamp}] ジョブ処理開始: ${jobId} (crawl_results_id: ${job.crawl_results_id})`
+    );
 
     try {
-      console.log(`ジョブ処理開始: ${jobId} - ${job.crawl_results.site_url}`);
-
       // 進行状況更新関数
       const updateProgress = async (progress: number) => {
         await this.updateJobProgress(jobId, progress);
         this.emit("jobProgress", { ...job, progress });
+        console.log(
+          `[${new Date().toISOString()}] ジョブ ${jobId} 進行状況: ${progress}%`
+        );
       };
 
-      // 初期進行状況: クロール開始
-      await updateProgress(10);
-      // TODO: ここでSEOチェックを実行
-      await executeSeoCheck();
+      console.log(`[${timestamp}] ジョブデータ:`, {
+        id: job.id,
+        project_id: job.project_id,
+        crawl_results_id: job.crawl_results_id,
+        user_id: job.user_id,
+        crawl_results: job.crawl_results ? "データあり" : "データなし",
+      });
 
-      // クロール成果物のマージ
+      // 初期進行状況: SEOチェック開始
+      await updateProgress(10);
+
+      // SEOチェック実行
+      console.log(
+        `[${new Date().toISOString()}] SEOチェック実行開始: ${jobId}`
+      );
+      await executeSeoCheck({
+        projectId: job.project_id,
+        crawlResultDataId: job.crawl_results_id,
+        crawlData: job.crawl_results.crawl_data,
+      });
+
       await updateProgress(60);
 
-      // VueFlowデータ生成とSupabaseへのアップロード
       await updateProgress(80);
 
-      // TODO: SEOチェック結果をSupabaseにアップロード
+      // SEOチェック結果をSupabaseにアップロード
+      console.log(
+        `[${new Date().toISOString()}] SEOチェック結果をSupabaseに保存: ${jobId}`
+      );
       const { data, error } = await supabase
-        .from("crawl_results")
-        .update({})
-        .eq("id", job.crawl_results_id)
-        .select();
+        .from("seo_check_results")
+        .insert({
+          project_id: job.project_id,
+          crawl_results_id: job.crawl_results_id,
+          total_score: 100, // 仮のスコア
+          meta_score: 100, // 仮のメタスコア
+          improvement_suggestions: "No issues found", // 仮の改善提案
+          checked_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
 
-      console.log("SEOチェック結果:", data);
+      console.log(
+        `[${new Date().toISOString()}] SEOチェック結果保存完了:`,
+        data
+      );
 
       if (error) throw error;
 
       // 完了
-      const result = { message: "SEO チェックが終わりました。" };
-      await this.completeJob(jobId, result);
+      await this.completeJob(jobId, {
+        message: "SEO チェックが終わりました。",
+      });
 
-      console.log(`ジョブ完了: ${jobId}`);
-      this.emit("jobCompleted", { ...job, result, data });
+      console.log(`[${new Date().toISOString()}] ジョブ完了: ${jobId}`);
+      this.emit("jobCompleted", { ...job, data });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
       await this.failJob(jobId, errorMessage);
 
-      console.error(`ジョブ失敗: ${jobId}`, error);
+      console.error(
+        `[${new Date().toISOString()}] ジョブ失敗: ${jobId}`,
+        error
+      );
       this.emit("jobFailed", { ...job, error_message: errorMessage });
     } finally {
       this.processingJobs.delete(jobId);
+      console.log(
+        `[${new Date().toISOString()}] ジョブ処理終了: ${jobId} (処理中ジョブ数: ${
+          this.processingJobs.size
+        })`
+      );
 
-      // 次のジョブ処理
-      setTimeout(() => this.processQueue(), 1000);
+      // 次のジョブ処理 (少し遅延を設ける)
+      setTimeout(() => {
+        console.log(
+          `[${new Date().toISOString()}] 次のキュー処理をスケジュール`
+        );
+        this.processQueue();
+      }, 1000);
     }
   }
 
@@ -236,7 +342,7 @@ class SupabaseQueue extends EventEmitter {
   }
 }
 
-export const crawlQueue = new SupabaseQueue();
+export const seoCheckQueue = new SupabaseQueue();
 
 // サーバー起動時に定期チェック開始
-crawlQueue.startPeriodicCheck();
+seoCheckQueue.startPeriodicCheck();
