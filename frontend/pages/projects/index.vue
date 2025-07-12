@@ -58,7 +58,12 @@ onMounted(async () => {
 
   isLoading.value = true;
   myProjects.value = await fetchSiteProjects(user.value.id);
-  isLoading.value = false;
+
+  // TODO: remove it
+  // Simulate loading delay
+  setTimeout(() => {
+    isLoading.value = false;
+  }, 1000);
 
   // TODO:Set up subscription after user is confirmed
   subscription = supabase
@@ -122,8 +127,15 @@ onBeforeUnmount(() => {
       </Button>
     </div>
 
+    <div v-if="isLoading" class="flex h-fit items-center justify-center">
+      <Icon
+        name="mdi:loading"
+        class="text-muted-foreground mx-auto my-8 !size-12 animate-spin"
+      />
+    </div>
+
     <div
-      v-if="myProjects.length"
+      v-if="!isLoading && myProjects.length"
       class="grid h-fit grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-6"
     >
       <Card v-for="site in myProjects" :key="site.id" class="gap-2 py-4">
@@ -206,7 +218,7 @@ onBeforeUnmount(() => {
     </div>
 
     <div
-      v-else
+      v-else-if="!isLoading && !myProjects.length"
       class="flex h-full flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-8"
     >
       <p class="text-muted-foreground text-sm">
