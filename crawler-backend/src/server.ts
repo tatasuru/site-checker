@@ -91,6 +91,7 @@ server.post("/create-crawl-data", async (request, reply) => {
       .from("crawl_results")
       .insert([
         {
+          user_id: userId,
           project_id: projectData.id,
           site_url: siteUrl,
           status: "waiting", // 初期状態は「waiting」
