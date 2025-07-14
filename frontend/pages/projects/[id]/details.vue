@@ -15,10 +15,25 @@ definePageMeta({
 const supabase = useSupabaseClient();
 const user = useSupabaseUser();
 const route = useRoute();
-const progress = ref<number>(0);
-const isLoading = ref<boolean>(true); // 初期値をtrueに
+const isLoading = ref<boolean>(true);
 const myProject = ref<MyProjects | null>(null);
-const isDeleting = ref<boolean>(false);
+const tabMenus = ref([
+  {
+    value: "overview",
+    icon: "mdi:google-analytics",
+    label: "プロジェクト概要",
+  },
+  {
+    value: "quality",
+    icon: "mdi:check-circle-outline",
+    label: "サイトチェック詳細",
+  },
+  {
+    value: "settings",
+    icon: "mdi:cog-outline",
+    label: "プロジェクト設定",
+  },
+]);
 
 /**********************************
  * fetch project overview
@@ -76,49 +91,9 @@ const cardContents = computed(() => {
   ];
 });
 
-// スケルトン用のダミーカード
-const skeletonCards = Array(4)
-  .fill(null)
-  .map((_, index) => ({
-    title: "",
-    icon: "mdi:help-circle",
-    description: "",
-    buttonLabel: "",
-    buttonLink: "",
-  }));
-
 /**********************************
  * project helper functions
  **********************************/
-async function deleteProject(id: string) {
-  if (!user.value) {
-    console.error("ユーザーがログインしていません");
-    toast.error("ユーザーがログインしていません");
-    return;
-  }
-
-  try {
-    isDeleting.value = true;
-
-    const { error } = await supabase
-      .from("projects")
-      .delete()
-      .eq("id", id)
-      .eq("user_id", user.value.id);
-
-    if (error) throw error;
-
-    toast.success("削除に成功しました");
-    console.log("削除に成功しました");
-    await navigateTo("/projects");
-  } catch (error) {
-    toast.error("削除に失敗しました。もう一度お試しください。");
-    console.error("削除に失敗しました:", error);
-  } finally {
-    isDeleting.value = false;
-  }
-}
-
 async function fetchProjectDetails(id: string): Promise<MyProjects | null> {
   try {
     const { data, error } = await supabase
@@ -282,228 +257,44 @@ onBeforeUnmount(() => {
         class="bg-background border-border relative w-full justify-start rounded-none border-b p-0"
       >
         <TabsTrigger
-          value="overview"
+          v-for="menu in tabMenus"
+          :key="menu.value"
+          :value="menu.value"
           class="data-[state=active]:border-b-green -mb-1 w-fit flex-0 cursor-pointer rounded-none border-t-0 border-r-0 border-b-0 border-l-0 shadow-none hover:shadow-none data-[state=active]:relative data-[state=active]:z-10 data-[state=active]:border-b-2 data-[state=active]:shadow-none"
         >
-          <Icon name="mdi:google-analytics" class="!size-4" />
-          プロジェクト概要
-        </TabsTrigger>
-        <TabsTrigger
-          value="quality"
-          class="data-[state=active]:border-b-green -mb-1 w-fit flex-0 cursor-pointer rounded-none border-t-0 border-r-0 border-b-0 border-l-0 shadow-none hover:shadow-none data-[state=active]:relative data-[state=active]:z-10 data-[state=active]:border-b-2 data-[state=active]:shadow-none"
-        >
-          <Icon name="mdi:check-circle-outline" class="!size-4" />
-          サイトチェック詳細
-        </TabsTrigger>
-        <TabsTrigger
-          value="settings"
-          class="data-[state=active]:border-b-green -mb-1 w-fit flex-0 cursor-pointer rounded-none border-t-0 border-r-0 border-b-0 border-l-0 shadow-none hover:shadow-none data-[state=active]:relative data-[state=active]:z-10 data-[state=active]:border-b-2 data-[state=active]:shadow-none"
-        >
-          <Icon name="mdi:cog-outline" class="!size-4" />
-          プロジェクト設定
+          <Icon :name="menu.icon" class="!size-4" />
+          {{ menu.label }}
         </TabsTrigger>
       </TabsList>
 
       <!-- プロジェクト概要 -->
       <TabsContent value="overview" class="flex w-full flex-col gap-8">
-        <div class="flex flex-col gap-2">
-          <PageTitle title="サイトクロール状況" description="" size="small" />
-
-          <div
-            class="grid w-full grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4"
-          >
-            <!-- ローディング中のスケルトンカード -->
-            <template v-if="isLoading">
-              <Card
-                v-for="(_, index) in skeletonCards"
-                :key="`skeleton-${index}`"
-                class="gap-4 py-4"
-              >
-                <CardHeader
-                  class="flex flex-row items-start justify-between px-4"
-                >
-                  <div class="flex flex-col gap-1">
-                    <Skeleton class="h-4 w-24" />
-                  </div>
-                  <Skeleton class="h-5 w-5" />
-                </CardHeader>
-                <CardContent class="px-4">
-                  <Skeleton class="mb-2 h-6 w-full" />
-                  <Skeleton class="h-3 w-32" />
-                </CardContent>
-              </Card>
-            </template>
-
-            <!-- 実際のカードコンテンツ -->
-            <template v-else>
-              <Card
-                v-for="(card, index) in cardContents"
-                :key="`card-${index}`"
-                class="gap-4 py-4 transition-all duration-200 ease-in-out"
-              >
-                <CardHeader
-                  class="flex flex-row items-start justify-between px-4"
-                >
-                  <div class="flex flex-col gap-1">
-                    <CardTitle class="text-muted-foreground text-sm">
-                      {{ card.title }}
-                    </CardTitle>
-                  </div>
-                  <Icon
-                    :name="card.icon"
-                    :class="[
-                      '!size-5 transition-all duration-200',
-                      card.title === 'チェックステータス'
-                        ? getStatusColor(
-                            myProject?.crawl_results?.[0].status || 'unknown',
-                          )
-                        : 'text-green',
-                      {
-                        'animate-spin':
-                          myProject?.crawl_results?.[0].status ===
-                            'in_progress' &&
-                          card.title === 'チェックステータス',
-                      },
-                    ]"
-                  />
-                </CardHeader>
-                <CardContent class="px-4">
-                  <p
-                    class="text-base font-semibold tracking-wider transition-all duration-200"
-                    :class="
-                      card.title === 'チェックステータス'
-                        ? getStatusColor(
-                            myProject?.crawl_results?.[0].status || 'unknown',
-                          )
-                        : 'text-green'
-                    "
-                  >
-                    {{ card.description }}
-                  </p>
-                  <Button
-                    v-if="card.buttonLabel"
-                    as-child
-                    variant="link"
-                    class="text-muted-foreground h-fit w-fit p-0"
-                  >
-                    <NuxtLink
-                      :to="card.buttonLink"
-                      class="text-xs hover:underline hover:opacity-80"
-                    >
-                      {{ card.buttonLabel }}
-                      <Icon
-                        name="mdi-arrow-right"
-                        class="inline-block !size-4"
-                      />
-                    </NuxtLink>
-                  </Button>
-                </CardContent>
-              </Card>
-            </template>
-          </div>
+        <!-- skeleton -->
+        <div v-if="isLoading" class="flex h-fit items-center justify-center">
+          <Icon
+            name="mdi:loading"
+            class="text-muted-foreground mx-auto my-8 !size-12 animate-spin"
+          />
         </div>
 
-        <div class="flex flex-col gap-2">
-          <PageTitle title="SEOチェック概要" description="" size="small" />
-          グラフとかスコアとかがくる
-        </div>
+        <ProjectOverview
+          v-else
+          :myProject="myProject"
+          :cardContents="cardContents"
+        />
       </TabsContent>
 
       <!-- サイトチェック詳細 -->
       <TabsContent value="quality">
-        <PageTitle
-          title="サイトチェック詳細"
-          description="サイトチェックの詳細情報を表示します。"
-          size="medium"
-        />
+        <ProjectQuality v-if="!isLoading && myProject" />
       </TabsContent>
 
       <!-- プロジェクト設定 -->
       <TabsContent value="settings">
-        <Tabs
-          default-value="crawler"
-          class="h-full flex-row gap-12"
-          orientation="vertical"
-        >
-          <TabsList
-            class="bg-background relative w-full max-w-[200px] flex-col justify-start rounded-none border-none p-0"
-          >
-            <TabsTrigger
-              value="crawler"
-              class="text-green hover:bg-green/20 data-[state=active]:bg-green/20 data-[state=active]:text-green w-full flex-0 cursor-pointer justify-start rounded-[3px] bg-none shadow-none hover:shadow-none data-[state=active]:shadow-none"
-            >
-              クローラ設定
-            </TabsTrigger>
-            <TabsTrigger
-              value="seo-checker"
-              class="text-green hover:bg-green/20 data-[state=active]:bg-green/20 data-[state=active]:text-green w-full flex-0 cursor-pointer justify-start rounded-[3px] bg-none shadow-none hover:shadow-none data-[state=active]:shadow-none"
-            >
-              SEOチェック設定
-            </TabsTrigger>
-            <TabsTrigger
-              value="delete"
-              class="text-green hover:bg-green/20 data-[state=active]:bg-green/20 data-[state=active]:text-green w-full flex-0 cursor-pointer justify-start rounded-[3px] bg-none shadow-none hover:shadow-none data-[state=active]:shadow-none"
-            >
-              プロジェクト削除
-            </TabsTrigger>
-          </TabsList>
-          <Separator orientation="vertical" class="border-border h-full" />
-          <TabsContent value="crawler" class="flex flex-col gap-4">
-            <div v-if="isLoading" class="space-y-4">
-              <Skeleton class="h-6 w-32" />
-              <Skeleton class="h-4 w-64" />
-              <Skeleton class="h-10 w-40" />
-            </div>
-
-            <template v-else>
-              <PageTitle
-                title="クローラ設定"
-                description="このプロジェクトのクローラ設定を行います。"
-                size="medium"
-              />
-            </template>
-          </TabsContent>
-          <TabsContent value="seo-checker" class="flex flex-col gap-4">
-            <div v-if="isLoading" class="space-y-4">
-              <Skeleton class="h-6 w-32" />
-              <Skeleton class="h-4 w-64" />
-              <Skeleton class="h-10 w-40" />
-            </div>
-
-            <template v-else>
-              <PageTitle
-                title="SEOチェック設定"
-                description="このプロジェクトのSEOチェック設定を行います。"
-                size="medium"
-              />
-            </template>
-          </TabsContent>
-          <TabsContent value="delete" class="flex flex-col gap-4">
-            <div v-if="isLoading" class="space-y-4">
-              <Skeleton class="h-6 w-32" />
-              <Skeleton class="h-4 w-64" />
-              <Skeleton class="h-10 w-40" />
-            </div>
-
-            <template v-else>
-              <PageTitle
-                title="プロジェクト削除"
-                description="このプロジェクトを削除すると、関連するすべてのデータが失われます。"
-                size="medium"
-              />
-
-              <Button
-                variant="destructive"
-                class="w-fit"
-                :disabled="isDeleting || !myProject"
-                @click="deleteProject(route.params.id as string)"
-              >
-                <Icon name="mdi:delete" class="!size-4" />
-                {{ isDeleting ? "削除中..." : "プロジェクトを削除" }}
-              </Button>
-            </template>
-          </TabsContent>
-        </Tabs>
+        <ProjectSettings
+          v-if="!isLoading && myProject"
+          :myProject="myProject"
+        />
       </TabsContent>
     </Tabs>
   </div>
