@@ -62,3 +62,29 @@ export interface MyProjectSeoCheckResult {
   improvement_suggestions: string;
   checked_at: string;
 }
+
+// seo_meta_details
+export interface MyProjectSeoMetaDetail {
+  id: string;
+  seo_check_results_id: string;
+  page_url: string;
+  title_text: string;
+  title_length: number;
+  title_has_keywords: boolean;
+  meta_description_text: string;
+  meta_description_length: number;
+  canonical_url: string;
+  og_tags: {
+    og_title: string;
+    og_description: string;
+    og_image: string;
+  };
+  twitter_cards: {
+    twitter_title: string;
+    twitter_description: string;
+    twitter_image: string;
+  };
+  keywords: string[];
+  score: number;
+  created_at: string;
+}

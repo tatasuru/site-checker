@@ -5,7 +5,11 @@ import {
   getCheckStatusIcon,
   getStatusColor,
 } from "@/utils/status";
-import type { MyProjects, MyProjectSeoCheckResult } from "@/types/project";
+import type {
+  MyProjects,
+  MyProjectSeoCheckResult,
+  MyProjectSeoMetaDetail,
+} from "@/types/project";
 
 definePageMeta({
   middleware: "auth",
@@ -18,6 +22,7 @@ const route = useRoute();
 const isLoading = ref<boolean>(true);
 const myProject = ref<MyProjects | null>(null);
 const myProjectSeoCheckResults = ref<MyProjectSeoCheckResult | null>(null);
+const myProjectSeoMetaDetails = ref<MyProjectSeoMetaDetail[] | null>(null);
 const tabMenus = ref([
   {
     value: "overview",
@@ -32,7 +37,7 @@ const tabMenus = ref([
   {
     value: "settings",
     icon: "mdi:cog-outline",
-    label: "プロジェクト設定",
+    label: "各種設定",
   },
 ]);
 
@@ -148,6 +153,27 @@ async function fetchSeoCheckResults(
   }
 }
 
+async function fetchSeoMetaDetails(
+  id: string,
+): Promise<MyProjectSeoMetaDetail[] | null> {
+  try {
+    const { data, error } = await supabase
+      .from("seo_meta_details")
+      .select("*")
+      .eq("seo_check_results_id", id)
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    if (error) throw error;
+
+    return data && data.length > 0 ? (data as MyProjectSeoMetaDetail[]) : null;
+  } catch (error) {
+    console.error("Error fetching SEO results:", error);
+    toast.error("SEO結果の取得に失敗しました");
+    return null;
+  }
+}
+
 /************************
  * Lifecycle Hooks
  ************************/
@@ -168,6 +194,13 @@ onMounted(async () => {
     if (myProject.value) {
       myProjectSeoCheckResults.value = await fetchSeoCheckResults(
         myProject.value.id,
+      );
+    }
+
+    // SEOメタデータを取得
+    if (myProjectSeoCheckResults.value) {
+      myProjectSeoMetaDetails.value = await fetchSeoMetaDetails(
+        myProjectSeoCheckResults.value.id,
       );
     }
 
@@ -268,10 +301,10 @@ onBeforeUnmount(() => {
         <!-- ボタンも条件付きで表示 -->
         <Button v-if="!isLoading && myProject" as-child variant="main">
           <NuxtLink
-            :to="`/sites/${route.params.id}/settings`"
+            :to="`/sites/${route.params.id}/sitemap`"
             class="flex w-fit items-center gap-2"
           >
-            サイトチェック設定へ
+            サイトマップを見る
             <Icon name="mdi-arrow-right" />
           </NuxtLink>
         </Button>
@@ -284,7 +317,7 @@ onBeforeUnmount(() => {
     <!-- メインコンテンツ -->
     <Tabs default-value="overview" class="w-full gap-4">
       <TabsList
-        class="bg-background border-border relative w-full justify-start rounded-none border-b p-0"
+        class="bg-background border-border sticky top-0 z-10 w-full justify-start rounded-none border-b p-0"
       >
         <TabsTrigger
           v-for="menu in tabMenus"
@@ -317,7 +350,12 @@ onBeforeUnmount(() => {
 
       <!-- サイトチェック詳細 -->
       <TabsContent value="quality">
-        <ProjectQuality v-if="!isLoading && myProject" />
+        <ProjectQuality
+          v-if="!isLoading && myProject"
+          :myProject="myProject"
+          :myProjectSeoCheckResults="myProjectSeoCheckResults"
+          :myProjectSeoMetaDetails="myProjectSeoMetaDetails"
+        />
       </TabsContent>
 
       <!-- プロジェクト設定 -->
