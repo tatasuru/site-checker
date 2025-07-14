@@ -95,11 +95,38 @@ server.post("/completed-crawler", async (request, reply) => {
         };
       }
 
+      // 1. seo_check_resultsテーブルを作成
+      const { data: seoCheckResultData, error: seoCheckResultError } =
+        await supabase
+          .from("seo_check_results")
+          .insert({
+            project_id: record.project_id,
+            crawl_results_id: record.id,
+            total_score: null,
+            meta_score: null,
+            improvement_suggestions: null,
+            checked_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+      if (seoCheckResultError || !seoCheckResultData) {
+        console.error(
+          `[${timestamp}] SEOチェック結果の保存中にエラー:`,
+          seoCheckResultError
+        );
+        return reply.status(500).send({
+          error: "Failed to create SEO check result.",
+          details: seoCheckResultError?.message || "No data returned",
+        });
+      }
+
       // 2.SEOチェックジョブをキューに追加
       jobId = await seoCheckQueue.addJob({
         userId: record.user_id,
         projectId: record.project_id,
         crawlResultDataId: record.id,
+        seoCheckResultId: seoCheckResultData.id,
       });
 
       console.log(`[${timestamp}] SEOチェックジョブ作成成功: ${jobId}`);

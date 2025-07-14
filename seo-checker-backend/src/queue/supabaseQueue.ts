@@ -24,6 +24,7 @@ class SupabaseQueue extends EventEmitter {
     userId: string;
     projectId: string; // プロジェクトID
     crawlResultDataId: string; // クロール結果データID
+    seoCheckResultId: string; // SEOチェック結果データID
   }): Promise<string> {
     console.log("ジョブ追加:", data);
 
@@ -56,6 +57,7 @@ class SupabaseQueue extends EventEmitter {
       }
     }
 
+    // 新規ジョブを追加
     const { data: job, error } = await supabase
       .from("seo_check_jobs")
       .insert([
@@ -63,6 +65,7 @@ class SupabaseQueue extends EventEmitter {
           user_id: data.userId,
           project_id: data.projectId,
           crawl_results_id: data.crawlResultDataId,
+          seo_check_results_id: data.seoCheckResultId,
           status: "pending",
           progress: 0,
           error_message: null,
@@ -254,6 +257,7 @@ class SupabaseQueue extends EventEmitter {
         id: job.id,
         project_id: job.project_id,
         crawl_results_id: job.crawl_results_id,
+        seo_check_results_id: job.seo_check_results_id,
         user_id: job.user_id,
         crawl_results: job.crawl_results ? "データあり" : "データなし",
       });
@@ -269,6 +273,7 @@ class SupabaseQueue extends EventEmitter {
         projectId: job.project_id,
         crawlResultDataId: job.crawl_results_id,
         crawlData: job.crawl_results.crawl_data,
+        seoCheckResultId: job.seo_check_results_id,
       });
 
       await updateProgress(60);
@@ -281,7 +286,7 @@ class SupabaseQueue extends EventEmitter {
       );
       const { data, error } = await supabase
         .from("seo_check_results")
-        .insert({
+        .update({
           project_id: job.project_id,
           crawl_results_id: job.crawl_results_id,
           total_score: 100, // 仮のスコア
@@ -289,6 +294,7 @@ class SupabaseQueue extends EventEmitter {
           improvement_suggestions: "No issues found", // 仮の改善提案
           checked_at: new Date().toISOString(),
         })
+        .eq("id", job.seo_check_results_id)
         .select()
         .single();
 
