@@ -121,71 +121,81 @@ const color = (d: number, i: number) => {
       <div
         class="grid w-full grid-cols-[repeat(auto-fill,minmax(420px,1fr))] gap-4"
       >
-        <Card class="py-4">
-          <CardContent class="flex items-center gap-4 px-6">
-            <VisSingleContainer
-              :data="totalPieScores"
-              class="small-donut !h-24 !w-24"
-            >
-              <VisDonut
-                :value="totalValue"
-                :cornerRadius="2"
-                :color="totalColor"
-                :arcWidth="5"
-                :radius="45"
-                :centralLabel="`${props.myProjectSeoCheckResults?.total_score || 0}点`"
-              />
-            </VisSingleContainer>
+        <ClientOnly>
+          <Card class="py-4">
+            <CardContent class="flex items-center gap-4 px-6">
+              <VisSingleContainer
+                :data="totalPieScores"
+                class="small-donut !h-24 !w-24"
+              >
+                <VisDonut
+                  :value="totalValue"
+                  :cornerRadius="2"
+                  :color="totalColor"
+                  :arcWidth="5"
+                  :radius="45"
+                  :centralLabel="`${props.myProjectSeoCheckResults?.total_score || 0}点`"
+                />
+              </VisSingleContainer>
 
-            <div class="flex flex-col items-start gap-2">
-              <div class="flex flex-col gap-1">
-                <p class="text-base font-semibold">総合評価</p>
-                <span class="text-muted-foreground text-sm">
-                  全項目の総合評価点数
-                </span>
+              <div class="flex flex-col items-start gap-2">
+                <div class="flex flex-col gap-1">
+                  <p class="text-base font-semibold">総合評価</p>
+                  <span class="text-muted-foreground text-sm">
+                    全項目の総合評価点数
+                  </span>
+                </div>
+                <Button as-child variant="link" class="text-green px-0">
+                  <NuxtLink
+                    to="/projects"
+                    class="flex w-fit items-center gap-2"
+                  >
+                    詳細を確認する
+                    <Icon name="mdi-arrow-right" />
+                  </NuxtLink>
+                </Button>
               </div>
-              <Button as-child variant="link" class="text-green px-0">
-                <NuxtLink to="/projects" class="flex w-fit items-center gap-2">
-                  詳細を確認する
-                  <Icon name="mdi-arrow-right" />
-                </NuxtLink>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </ClientOnly>
 
-        <Card class="py-4">
-          <CardContent class="flex items-center gap-4 px-6">
-            <VisSingleContainer
-              :data="pieScores"
-              class="small-donut !h-24 !w-24"
-            >
-              <VisDonut
-                :value="value"
-                :cornerRadius="2"
-                :color="color"
-                :arcWidth="5"
-                :radius="45"
-                :centralLabel="`${props.myProjectSeoCheckResults?.total_score || 0}点`"
-              />
-            </VisSingleContainer>
+        <ClientOnly>
+          <Card class="py-4">
+            <CardContent class="flex items-center gap-4 px-6">
+              <VisSingleContainer
+                :data="pieScores"
+                class="small-donut !h-24 !w-24"
+              >
+                <VisDonut
+                  :value="value"
+                  :cornerRadius="2"
+                  :color="color"
+                  :arcWidth="5"
+                  :radius="45"
+                  :centralLabel="`${props.myProjectSeoCheckResults?.total_score || 0}点`"
+                />
+              </VisSingleContainer>
 
-            <div class="flex flex-col items-start gap-2">
-              <div class="flex flex-col gap-1">
-                <p class="text-base font-semibold">SEOチェック結果</p>
-                <span class="text-muted-foreground text-sm">
-                  SEOに関するチェック結果の概要
-                </span>
+              <div class="flex flex-col items-start gap-2">
+                <div class="flex flex-col gap-1">
+                  <p class="text-base font-semibold">SEOチェック結果</p>
+                  <span class="text-muted-foreground text-sm">
+                    SEOに関するチェック結果の概要
+                  </span>
+                </div>
+                <Button as-child variant="link" class="text-green px-0">
+                  <NuxtLink
+                    to="/projects"
+                    class="flex w-fit items-center gap-2"
+                  >
+                    詳細を確認する
+                    <Icon name="mdi-arrow-right" />
+                  </NuxtLink>
+                </Button>
               </div>
-              <Button as-child variant="link" class="text-green px-0">
-                <NuxtLink to="/projects" class="flex w-fit items-center gap-2">
-                  詳細を確認する
-                  <Icon name="mdi-arrow-right" />
-                </NuxtLink>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </ClientOnly>
       </div>
     </div>
   </div>
