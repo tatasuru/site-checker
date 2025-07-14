@@ -51,3 +51,14 @@ export interface MyProjectOverview extends BaseProject {
   created_at: string;
   updated_at: string;
 }
+
+// seo_check_results
+export interface MyProjectSeoCheckResult {
+  id: string;
+  project_id: string;
+  crawl_results_id: string;
+  total_score: number;
+  meta_score: number;
+  improvement_suggestions: string;
+  checked_at: string;
+}

@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import type { MyProjects } from "@/types/project";
+// https://unovis.dev/docs/misc/Donut
+import { VisSingleContainer, VisDonut } from "@unovis/vue";
+import type { MyProjects, MyProjectSeoCheckResult } from "@/types/project";
 import { getStatusColor } from "@/utils/status";
 
 const props = defineProps<{
   myProject: MyProjects | null;
+  myProjectSeoCheckResults: MyProjectSeoCheckResult | null;
   cardContents: {
     title: string;
     description: string;
@@ -12,11 +15,19 @@ const props = defineProps<{
     buttonLink?: string;
   }[];
 }>();
+
+const pieScores = computed(() => {
+  if (!props.myProjectSeoCheckResults) return [0, 0];
+  const totalScore = props.myProjectSeoCheckResults.total_score || 0;
+  return [totalScore, 100 - totalScore];
+});
+const value = (d: number) => d;
+const color = (d: number, i: number) => ["#4bba54", "#d5d8d5"][i];
 </script>
 
 <template>
   <div class="flex flex-col gap-2">
-    <PageTitle title="サイトクロール状況" description="" size="small" />
+    <PageTitle title="サイトクロール状況" description="" size="medium" />
 
     <div
       class="grid w-full grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4"
@@ -82,7 +93,116 @@ const props = defineProps<{
   </div>
 
   <div class="flex flex-col gap-2">
-    <PageTitle title="SEOチェック概要" description="" size="small" />
-    グラフとかスコアとかがくる
+    <PageTitle title="サイトチェック概要" description="" size="medium" />
+
+    <div class="flex w-full gap-6">
+      <!-- overview -->
+      <!-- <Card class="h-fit min-w-[500px] py-6">
+        <CardHeader class="flex justify-between px-6">
+          <div class="flex flex-col items-start gap-1">
+            <CardTitle class="text-lg"> 総合評価 </CardTitle>
+            <CardDescription class="text-muted-foreground text-sm">
+              {{ props.myProjectSeoCheckResults?.improvement_suggestions }}
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent class="flex items-center justify-center px-6">
+          <VisSingleContainer :data="pieScores" class="large-donut !h-72 !w-72">
+            <VisDonut
+              :value="value"
+              :cornerRadius="10"
+              :color="color"
+              :arcWidth="15"
+              :radius="120"
+              :centralLabel="`${props.myProjectSeoCheckResults?.total_score || 0}点`"
+              centralSubLabel="100点満点中"
+            />
+          </VisSingleContainer>
+        </CardContent>
+      </Card> -->
+
+      <div class="grid w-full grid-cols-[1fr_1fr_1fr_1fr] gap-4">
+        <Card class="py-4">
+          <CardContent class="flex items-center gap-4 px-6">
+            <VisSingleContainer
+              :data="pieScores"
+              class="small-donut !h-24 !w-24"
+            >
+              <VisDonut
+                :value="value"
+                :cornerRadius="2"
+                :color="color"
+                :arcWidth="5"
+                :radius="45"
+                :centralLabel="`${props.myProjectSeoCheckResults?.total_score || 0}点`"
+              />
+            </VisSingleContainer>
+
+            <div class="flex flex-col items-start gap-2">
+              <div class="flex flex-col gap-1">
+                <p class="text-base font-semibold">総合評価</p>
+                <span class="text-muted-foreground text-sm">
+                  全項目の総合評価点数
+                </span>
+              </div>
+              <Button as-child variant="link" class="text-green px-0">
+                <NuxtLink to="/projects" class="flex w-fit items-center gap-2">
+                  詳細を確認する
+                  <Icon name="mdi-arrow-right" />
+                </NuxtLink>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card class="py-4">
+          <CardContent class="flex items-center gap-4 px-6">
+            <VisSingleContainer
+              :data="pieScores"
+              class="small-donut !h-24 !w-24"
+            >
+              <VisDonut
+                :value="value"
+                :cornerRadius="2"
+                :color="color"
+                :arcWidth="5"
+                :radius="45"
+                :centralLabel="`${props.myProjectSeoCheckResults?.total_score || 0}点`"
+              />
+            </VisSingleContainer>
+
+            <div class="flex flex-col items-start gap-2">
+              <div class="flex flex-col gap-1">
+                <p class="text-base font-semibold">SEOチェック結果</p>
+                <span class="text-muted-foreground text-sm">
+                  SEOに関するチェック結果の概要
+                </span>
+              </div>
+              <Button as-child variant="link" class="text-green px-0">
+                <NuxtLink to="/projects" class="flex w-fit items-center gap-2">
+                  詳細を確認する
+                  <Icon name="mdi-arrow-right" />
+                </NuxtLink>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.large-donut {
+  --vis-donut-central-label-font-size: 24px;
+  --vis-donut-central-sub-label-font-size: 14px;
+  --vis-donut-central-label-text-color: #4bba54;
+  --vis-donut-central-label-font-weight: bold;
+}
+
+.small-donut {
+  --vis-donut-central-label-font-size: 14px;
+  --vis-donut-central-label-text-color: #4bba54;
+  --vis-donut-central-label-font-weight: bold;
+}
+</style>

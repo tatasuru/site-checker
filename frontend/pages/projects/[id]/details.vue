@@ -5,7 +5,7 @@ import {
   getCheckStatusIcon,
   getStatusColor,
 } from "@/utils/status";
-import type { MyProjects } from "@/types/project";
+import type { MyProjects, MyProjectSeoCheckResult } from "@/types/project";
 
 definePageMeta({
   middleware: "auth",
@@ -17,6 +17,7 @@ const user = useSupabaseUser();
 const route = useRoute();
 const isLoading = ref<boolean>(true);
 const myProject = ref<MyProjects | null>(null);
+const myProjectSeoCheckResults = ref<MyProjectSeoCheckResult | null>(null);
 const tabMenus = ref([
   {
     value: "overview",
@@ -125,6 +126,28 @@ async function fetchProjectDetails(id: string): Promise<MyProjects | null> {
   }
 }
 
+async function fetchSeoCheckResults(
+  id: string,
+): Promise<MyProjectSeoCheckResult | null> {
+  try {
+    const { data, error } = await supabase
+      .from("seo_check_results")
+      .select("*")
+      .eq("project_id", id)
+      .order("checked_at", { ascending: false });
+
+    if (error) throw error;
+
+    return data && data.length > 0
+      ? (data[0] as MyProjectSeoCheckResult)
+      : null;
+  } catch (error) {
+    console.error("Error fetching SEO results:", error);
+    toast.error("SEO結果の取得に失敗しました");
+    return null;
+  }
+}
+
 /************************
  * Lifecycle Hooks
  ************************/
@@ -140,6 +163,13 @@ onMounted(async () => {
   try {
     // プロジェクトデータを取得
     myProject.value = await fetchProjectDetails(route.params.id as string);
+
+    // SEOチェック結果を取得
+    if (myProject.value) {
+      myProjectSeoCheckResults.value = await fetchSeoCheckResults(
+        myProject.value.id,
+      );
+    }
 
     // リアルタイム監視を設定
     subscription = supabase
@@ -280,6 +310,7 @@ onBeforeUnmount(() => {
         <ProjectOverview
           v-else
           :myProject="myProject"
+          :myProjectSeoCheckResults="myProjectSeoCheckResults"
           :cardContents="cardContents"
         />
       </TabsContent>
