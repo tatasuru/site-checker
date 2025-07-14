@@ -25,6 +25,7 @@ interface SeoCheckResult {
     twitter_image: string;
   };
   keywords: string[];
+  score: number;
 }
 
 interface CrawlData {
@@ -224,6 +225,78 @@ function extractKeywords(doc: Document): Pick<SeoCheckResult, "keywords"> {
 }
 
 /************************************************
+ * scoreの計算関数
+ ************************************************/
+function calculateScore({
+  titleCheckResult,
+  descriptionCheckResult,
+  canonicalUrlCheckResult,
+  ogTagsCheckResult,
+  twitterCardsCheckResult,
+  keywordsCheckResult,
+}: {
+  titleCheckResult: TitleCheckResult;
+  descriptionCheckResult: DescriptionCheckResult;
+  canonicalUrlCheckResult: Pick<SeoCheckResult, "canonical_url">;
+  ogTagsCheckResult: {
+    og_title: string;
+    og_description: string;
+    og_image: string;
+  };
+  twitterCardsCheckResult: Pick<SeoCheckResult, "twitter_cards">;
+  keywordsCheckResult: Pick<SeoCheckResult, "keywords">;
+}): number {
+  // 満点は100点とする
+  let score = 100;
+
+  // タイトルのチェック
+  if (!titleCheckResult.title_text) score -= 20;
+
+  // デスクリプションのチェック
+  if (!descriptionCheckResult.meta_description_text) score -= 20;
+
+  // Canonical URLのチェック
+  if (!canonicalUrlCheckResult.canonical_url) score -= 15;
+
+  // Open Graphタグのチェック
+  if (!ogTagsCheckResult.og_title) score -= 15;
+
+  // Twitterカードのチェック
+  if (!twitterCardsCheckResult.twitter_cards.twitter_title) score -= 15;
+
+  // キーワードのチェック
+  if (keywordsCheckResult.keywords.length === 0) {
+    score -= 15;
+  } else {
+    // キーワードが存在する場合、タイトルに含まれているかチェック
+    const titleLower = titleCheckResult.title_text.toLowerCase();
+    const hasKeywords = keywordsCheckResult.keywords.some((keyword) =>
+      titleLower.includes(keyword)
+    );
+    if (!hasKeywords) {
+      score -= 10; // キーワードがタイトルに含まれていない場合は減点
+    }
+  }
+
+  return Math.max(score, 0); // スコアは0以上に制限
+}
+
+/************************************************
+ * 改善メッセージの生成関数
+ ************************************************/
+function generateImprovementMessage(score: number): string {
+  if (score >= 90) {
+    return "素晴らしい！SEO対策はほぼ完璧です。";
+  } else if (score >= 75) {
+    return "良好ですが、いくつかの改善点があります。";
+  } else if (score >= 50) {
+    return "改善の余地があります。特にタイトルとデスクリプションを見直してください。";
+  } else {
+    return "SEO対策が不十分です。全体的な見直しをお勧めします。";
+  }
+}
+
+/************************************************
  * SEOチェックを実行する関数
  *************************************************/
 export async function executeSeoCheck({
@@ -236,7 +309,10 @@ export async function executeSeoCheck({
   crawlResultDataId: string;
   crawlData: CrawlData[];
   seoCheckResultId: string; // SEOチェック結果データID
-}) {
+}): Promise<{
+  averageScore: number;
+  improvementSuggestions: string;
+}> {
   try {
     console.log("SEOチェックを実行中...");
     const seoMetaResults: SeoCheckResult[] = [];
@@ -284,6 +360,16 @@ export async function executeSeoCheck({
       // 6. キーワードの抽出
       const keywordsCheckResult = extractKeywords(doc);
 
+      // 7. スコアの計算
+      const score = calculateScore({
+        titleCheckResult,
+        descriptionCheckResult,
+        canonicalUrlCheckResult,
+        ogTagsCheckResult,
+        twitterCardsCheckResult,
+        keywordsCheckResult,
+      });
+
       // 7. 結果をSupabaseに保存
       const { data, error } = await supabase
         .from("seo_meta_details")
@@ -300,6 +386,7 @@ export async function executeSeoCheck({
           og_tags: ogTagsCheckResult,
           twitter_cards: twitterCardsCheckResult.twitter_cards,
           keywords: keywordsCheckResult.keywords,
+          score: score,
         })
         .select()
         .single();
@@ -317,6 +404,7 @@ export async function executeSeoCheck({
         og_tags: ogTagsCheckResult,
         twitter_cards: twitterCardsCheckResult.twitter_cards,
         keywords: keywordsCheckResult.keywords,
+        score: score,
       });
 
       if (error) {
@@ -327,8 +415,21 @@ export async function executeSeoCheck({
       console.log("SEOメタ情報をSupabaseに保存:", data);
     }
 
+    // 9. page_urlごとにSEOチェックscoreを合算し、平均を出す。
+    const totalScore = seoMetaResults.reduce(
+      (sum, result) => sum + result.score,
+      0
+    );
+    const averageScore = Number(
+      (totalScore / seoMetaResults.length).toFixed(2)
+    );
+
     console.log("SEOチェックが完了しました。結果:", seoMetaResults);
-    return seoMetaResults;
+    console.log("平均スコア:", averageScore);
+    return {
+      averageScore,
+      improvementSuggestions: generateImprovementMessage(averageScore),
+    };
   } catch (error) {
     console.error("SEOチェック中にエラー:", error);
     throw new Error("SEOチェックに失敗しました。");

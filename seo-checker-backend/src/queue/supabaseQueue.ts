@@ -269,7 +269,7 @@ class SupabaseQueue extends EventEmitter {
       console.log(
         `[${new Date().toISOString()}] SEOチェック実行開始: ${jobId}`
       );
-      await executeSeoCheck({
+      const { averageScore, improvementSuggestions } = await executeSeoCheck({
         projectId: job.project_id,
         crawlResultDataId: job.crawl_results_id,
         crawlData: job.crawl_results.crawl_data,
@@ -277,6 +277,8 @@ class SupabaseQueue extends EventEmitter {
       });
 
       await updateProgress(60);
+
+      const totalScore = averageScore; // 仮のスコア
 
       await updateProgress(80);
 
@@ -289,9 +291,9 @@ class SupabaseQueue extends EventEmitter {
         .update({
           project_id: job.project_id,
           crawl_results_id: job.crawl_results_id,
-          total_score: 100, // 仮のスコア
-          meta_score: 100, // 仮のメタスコア
-          improvement_suggestions: "No issues found", // 仮の改善提案
+          total_score: totalScore,
+          meta_score: averageScore,
+          improvement_suggestions: improvementSuggestions,
           checked_at: new Date().toISOString(),
         })
         .eq("id", job.seo_check_results_id)
