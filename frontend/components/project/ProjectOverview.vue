@@ -96,32 +96,9 @@ const color = (d: number, i: number) => ["#4bba54", "#d5d8d5"][i];
     <PageTitle title="サイトチェック概要" description="" size="medium" />
 
     <div class="flex w-full gap-6">
-      <!-- overview -->
-      <!-- <Card class="h-fit min-w-[500px] py-6">
-        <CardHeader class="flex justify-between px-6">
-          <div class="flex flex-col items-start gap-1">
-            <CardTitle class="text-lg"> 総合評価 </CardTitle>
-            <CardDescription class="text-muted-foreground text-sm">
-              {{ props.myProjectSeoCheckResults?.improvement_suggestions }}
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent class="flex items-center justify-center px-6">
-          <VisSingleContainer :data="pieScores" class="large-donut !h-72 !w-72">
-            <VisDonut
-              :value="value"
-              :cornerRadius="10"
-              :color="color"
-              :arcWidth="15"
-              :radius="120"
-              :centralLabel="`${props.myProjectSeoCheckResults?.total_score || 0}点`"
-              centralSubLabel="100点満点中"
-            />
-          </VisSingleContainer>
-        </CardContent>
-      </Card> -->
-
-      <div class="grid w-full grid-cols-[1fr_1fr_1fr_1fr] gap-4">
+      <div
+        class="grid w-full grid-cols-[repeat(auto-fill,minmax(420px,1fr))] gap-4"
+      >
         <Card class="py-4">
           <CardContent class="flex items-center gap-4 px-6">
             <VisSingleContainer

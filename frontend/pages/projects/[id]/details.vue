@@ -299,7 +299,6 @@ onBeforeUnmount(() => {
 
       <!-- プロジェクト概要 -->
       <TabsContent value="overview" class="flex w-full flex-col gap-8">
-        <!-- skeleton -->
         <div v-if="isLoading" class="flex h-fit items-center justify-center">
           <Icon
             name="mdi:loading"
@@ -307,6 +306,7 @@ onBeforeUnmount(() => {
           />
         </div>
 
+        <!-- TODO: リダイレクトしてしまう。。 -->
         <ProjectOverview
           v-else
           :myProject="myProject"
