@@ -420,9 +420,7 @@ export async function executeSeoCheck({
       (sum, result) => sum + result.score,
       0
     );
-    const averageScore = Number(
-      (totalScore / seoMetaResults.length).toFixed(2)
-    );
+    const averageScore = Math.round(totalScore / seoMetaResults.length);
 
     console.log("SEOチェックが完了しました。結果:", seoMetaResults);
     console.log("平均スコア:", averageScore);
