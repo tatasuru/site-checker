@@ -335,7 +335,6 @@ onBeforeUnmount(() => {
           />
         </div>
 
-        <!-- TODO: リダイレクトしてしまう。。 -->
         <ProjectOverview
           v-else
           :myProject="myProject"

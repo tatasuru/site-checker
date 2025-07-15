@@ -257,17 +257,17 @@ function calculateScore({
   if (!descriptionCheckResult.meta_description_text) score -= 20;
 
   // Canonical URLのチェック
-  if (!canonicalUrlCheckResult.canonical_url) score -= 15;
+  if (!canonicalUrlCheckResult.canonical_url) score -= 5;
 
   // Open Graphタグのチェック
-  if (!ogTagsCheckResult.og_title) score -= 15;
+  if (!ogTagsCheckResult.og_title) score -= 20;
 
   // Twitterカードのチェック
-  if (!twitterCardsCheckResult.twitter_cards.twitter_title) score -= 15;
+  if (!twitterCardsCheckResult.twitter_cards.twitter_title) score -= 20;
 
   // キーワードのチェック
   if (keywordsCheckResult.keywords.length === 0) {
-    score -= 15;
+    score -= 5;
   } else {
     // キーワードが存在する場合、タイトルに含まれているかチェック
     const titleLower = titleCheckResult.title_text.toLowerCase();
@@ -275,7 +275,7 @@ function calculateScore({
       titleLower.includes(keyword)
     );
     if (!hasKeywords) {
-      score -= 10; // キーワードがタイトルに含まれていない場合は減点
+      score -= 5; // キーワードがタイトルに含まれていない場合は減点
     }
   }
 

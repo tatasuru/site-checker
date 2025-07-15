@@ -79,7 +79,7 @@ async function deleteProject(id: string) {
     </TabsList>
     <Separator orientation="vertical" class="border-border h-full" />
     <TabsContent value="project" class="flex flex-col gap-4">
-      <BasicSetting />
+      <BasicSetting :myProject="props.myProject" />
     </TabsContent>
     <TabsContent value="crawler" class="flex flex-col gap-4">
       <PageTitle

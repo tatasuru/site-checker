@@ -49,7 +49,11 @@ const color = (d: number, i: number) => {
 
 <template>
   <div class="flex flex-col gap-2">
-    <PageTitle title="サイトクロール状況" description="" size="medium" />
+    <PageTitle
+      title="サイトクロール状況"
+      description="直近のサイトクロール状況を確認できます。"
+      size="medium"
+    />
 
     <div
       class="grid w-full grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4"
@@ -115,7 +119,11 @@ const color = (d: number, i: number) => {
   </div>
 
   <div class="flex flex-col gap-2">
-    <PageTitle title="サイトチェック概要" description="" size="medium" />
+    <PageTitle
+      title="サイトチェック概要"
+      description="サイトのSEOチェック結果を確認できます。"
+      size="medium"
+    />
 
     <div class="flex w-full gap-6">
       <div

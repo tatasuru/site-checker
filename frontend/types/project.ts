@@ -12,11 +12,7 @@ interface BaseProject {
 
 // projects
 export interface MyProjects extends BaseProject {
-  id: string;
   latest_crawl_result_id?: string;
-  name: string;
-  created_at: string;
-  updated_at: string;
 
   // from crawl_results
   crawl_results?: {
