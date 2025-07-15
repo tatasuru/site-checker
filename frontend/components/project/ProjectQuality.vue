@@ -141,7 +141,14 @@ const columns: ColumnDef<MyProjectSeoMetaDetail>[] = [
     },
     cell: ({ row }) => {
       const title = row.getValue("title_text") as string;
-      if (!title) return h("div", {}, "");
+      if (!title)
+        return h(
+          "div",
+          {
+            class: "text-muted-foreground",
+          },
+          "no title",
+        );
 
       return h(
         Tooltip,
@@ -198,7 +205,14 @@ const columns: ColumnDef<MyProjectSeoMetaDetail>[] = [
     },
     cell: ({ row }) => {
       const description = row.getValue("meta_description_text") as string;
-      if (!description) return h("div", {}, "");
+      if (!description)
+        return h(
+          "div",
+          {
+            class: "text-muted-foreground",
+          },
+          "no description",
+        );
 
       return h(
         Tooltip,
@@ -303,6 +317,70 @@ const columns: ColumnDef<MyProjectSeoMetaDetail>[] = [
       );
     },
     size: 150,
+  },
+  {
+    accessorKey: "status_code",
+    header: ({ column }) => {
+      return h(
+        Button,
+        {
+          variant: "ghost",
+          onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
+          class: "cursor-pointer",
+        },
+        () => ["ステータスコード", h(ArrowUpDown, { class: "ml-2 h-4 w-4" })],
+      );
+    },
+    cell: ({ row }) => {
+      const keywords = row.getValue("status_code") as string[] | null;
+      if (!keywords || keywords.length === 0)
+        return h(
+          "div",
+          {
+            class: "text-muted-foreground",
+          },
+          "no status code",
+        );
+
+      return h(
+        Tooltip,
+        {},
+        {
+          default: () => [
+            h(
+              TooltipTrigger,
+              { asChild: true },
+              {
+                default: () =>
+                  h(
+                    "div",
+                    {
+                      class:
+                        "max-w-[120px] overflow-hidden text-ellipsis whitespace-nowrap cursor-help",
+                    },
+                    keywords,
+                  ),
+              },
+            ),
+            h(
+              TooltipContent,
+              { class: "max-w-[300px]" },
+              {
+                default: () =>
+                  h(
+                    "p",
+                    {
+                      class: "w-full break-words",
+                    },
+                    keywords,
+                  ),
+              },
+            ),
+          ],
+        },
+      );
+    },
+    size: 120,
   },
   {
     accessorKey: "keywords",
@@ -438,7 +516,7 @@ const table = useVueTable({
 
 <template>
   <TooltipProvider>
-    <div class="flex flex-col gap-2">
+    <div class="flex w-full flex-col gap-2">
       <div class="w-full">
         <div class="flex items-center py-4">
           <Input
@@ -476,6 +554,8 @@ const table = useVueTable({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+
+        <!-- table -->
         <div class="rounded-md border">
           <Table class="w-full">
             <TableHeader>
