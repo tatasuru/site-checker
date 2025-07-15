@@ -267,12 +267,9 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div
-    id="project-detail"
-    class="grid h-full w-full grid-rows-[auto_1fr] gap-4"
-  >
+  <div id="project-detail" class="flex h-full w-full flex-col gap-4">
     <!-- ヘッダー部分 -->
-    <div class="flex flex-col gap-4">
+    <div class="flex w-full flex-col gap-4">
       <Button as-child variant="link" class="px-0">
         <NuxtLink to="/projects" class="flex w-fit items-center gap-2">
           <Icon name="mdi-arrow-left" />
@@ -314,7 +311,7 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- メインコンテンツ -->
-    <Tabs default-value="overview" class="w-full gap-4">
+    <Tabs default-value="overview" class="w-full flex-1 gap-4">
       <TabsList
         class="bg-background border-border sticky top-0 z-10 w-full justify-start rounded-none border-b p-0"
       >
