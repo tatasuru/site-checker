@@ -186,13 +186,13 @@ npm install -g supabase
 supabase login
 
 # 型を生成
-supabase gen types typescript --project-id your-project-id > database.types.ts
+npx supabase gen types typescript --project-id "project_id" --schema public > database.types.ts
 
 # または、.env.localのSUPABASE_URLを使用
 supabase gen types typescript --project-id $(echo $SUPABASE_URL | grep -o 'https://[^.]*' | sed 's/https://') > database.types.ts
 ```
 
-詳細については[Supabase公式ドキュメント](https://supabase.com/docs/guides/api/rest/generating-types)を参照してください。
+詳細については[Supabase 公式ドキュメント](https://supabase.com/docs/guides/api/rest/generating-types)を参照してください。
 
 ## 使用方法
 

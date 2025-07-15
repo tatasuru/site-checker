@@ -78,6 +78,24 @@ const cardContents = computed(() => {
       buttonLink: `/sites/${myProject.value.id}/settings`,
     },
     {
+      title: "成功ページ数",
+      icon: "mdi:book-open-page-variant",
+      description: myProject.value.crawl_results?.[0].successful_pages
+        ? `${myProject.value.crawl_results?.[0].successful_pages} ページ`
+        : "チェックされたページはありません",
+      buttonLabel: "サイトチェック設定へ",
+      buttonLink: `/sites/${myProject.value.id}/settings`,
+    },
+    {
+      title: "失敗ページ数",
+      icon: "mdi:book-open-page-variant",
+      description: myProject.value.crawl_results?.[0].failed_pages
+        ? `${myProject.value.crawl_results?.[0].failed_pages} ページ`
+        : "チェックされたページはありません",
+      buttonLabel: "サイトチェック設定へ",
+      buttonLink: `/sites/${myProject.value.id}/settings`,
+    },
+    {
       title: "最新のチェック日時",
       icon: "mdi:clock",
       description: myProject.value.crawl_results?.[0].completed_at
@@ -319,7 +337,7 @@ onBeforeUnmount(() => {
           v-for="menu in tabMenus"
           :key="menu.value"
           :value="menu.value"
-          class="data-[state=active]:border-b-green -mb-1 w-fit flex-0 cursor-pointer rounded-none border-t-0 border-r-0 border-b-0 border-l-0 shadow-none hover:shadow-none data-[state=active]:relative data-[state=active]:z-10 data-[state=active]:border-b-2 data-[state=active]:shadow-none"
+          class="data-[state=active]:border-b-green data-[state=active]:dark:border-b-green -mb-1 w-fit flex-0 cursor-pointer rounded-none border-t-0 border-r-0 border-b-0 border-l-0 shadow-none hover:shadow-none data-[state=active]:relative data-[state=active]:z-10 data-[state=active]:border-b-2 data-[state=active]:shadow-none"
         >
           <Icon :name="menu.icon" class="!size-4" />
           {{ menu.label }}

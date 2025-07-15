@@ -24,6 +24,9 @@ interface SiteData {
 
 export const router = createPlaywrightRouter();
 router.addDefaultHandler(async ({ request, page, enqueueLinks, log }) => {
+  // リクエスト間に1秒の遅延
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+
   // リクエストのURLを取得
   const originalUrl = request.loadedUrl;
   log.info(`Request ${originalUrl} `);
@@ -40,8 +43,15 @@ router.addDefaultHandler(async ({ request, page, enqueueLinks, log }) => {
 
   // ハッシュを除去したURLでページにアクセス
   const response = await page.goto(urlForNavigation, {
-    waitUntil: "networkidle",
+    waitUntil: "domcontentloaded",
+    timeout: 60000,
   });
+
+  // 認証ページやエラーページをスキップ
+  if (response?.status() === 401 || response?.status() === 403) {
+    log.info(`Skipping protected page: ${urlForNavigation}`);
+    return;
+  }
 
   // 基本情報を取得
   const title = await page.title();

@@ -56,7 +56,7 @@ const color = (d: number, i: number) => {
     />
 
     <div
-      class="grid w-full grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4"
+      class="grid w-full grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-3"
     >
       <Card
         v-for="(card, index) in props.cardContents"
@@ -209,7 +209,7 @@ const color = (d: number, i: number) => {
   </div>
 </template>
 
-<style scoped>
+<style>
 .large-donut {
   --vis-donut-central-label-font-size: 24px;
   --vis-donut-central-sub-label-font-size: 14px;
@@ -221,5 +221,10 @@ const color = (d: number, i: number) => {
   --vis-donut-central-label-font-size: 14px;
   /* --vis-donut-central-label-text-color: #4bba54; */
   --vis-donut-central-label-font-weight: bold;
+}
+
+.dark .large-donut,
+.dark .small-donut {
+  --vis-donut-central-label-text-color: #fff;
 }
 </style>
