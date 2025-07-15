@@ -85,6 +85,7 @@ export interface MyProjectSeoMetaDetail {
     twitter_image: string;
   };
   keywords: string[];
+  status_code: number | null;
   score: number;
   created_at: string;
 }

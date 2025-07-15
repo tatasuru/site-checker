@@ -25,6 +25,7 @@ interface SeoCheckResult {
     twitter_image: string;
   };
   keywords: string[];
+  status_code: number | null;
   score: number;
 }
 
@@ -319,6 +320,7 @@ export async function executeSeoCheck({
     const rawHTMLsAndPageUrl: {
       pageUrl: string;
       rawHTML: string;
+      statusCode: number;
     }[] = [];
 
     console.log("プロジェクトID:", projectId);
@@ -330,6 +332,7 @@ export async function executeSeoCheck({
       rawHTMLsAndPageUrl.push({
         pageUrl: item.page_url,
         rawHTML: item.raw_html,
+        statusCode: item.status_code,
       });
     });
 
@@ -370,7 +373,7 @@ export async function executeSeoCheck({
         keywordsCheckResult,
       });
 
-      // 7. 結果をSupabaseに保存
+      // 8. 結果をSupabaseに保存
       const { data, error } = await supabase
         .from("seo_meta_details")
         .insert({
@@ -386,6 +389,7 @@ export async function executeSeoCheck({
           og_tags: ogTagsCheckResult,
           twitter_cards: twitterCardsCheckResult.twitter_cards,
           keywords: keywordsCheckResult.keywords,
+          status_code: item.statusCode || null,
           score: score,
         })
         .select()
@@ -404,6 +408,7 @@ export async function executeSeoCheck({
         og_tags: ogTagsCheckResult,
         twitter_cards: twitterCardsCheckResult.twitter_cards,
         keywords: keywordsCheckResult.keywords,
+        status_code: item.statusCode || null,
         score: score,
       });
 
