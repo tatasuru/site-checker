@@ -161,8 +161,7 @@ async function fetchSeoMetaDetails(
       .from("seo_meta_details")
       .select("*")
       .eq("seo_check_results_id", id)
-      .order("created_at", { ascending: false })
-      .limit(100);
+      .order("created_at", { ascending: false });
 
     if (error) throw error;
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { toast } from "vue-sonner";
 import type { MyProjects } from "@/types/project";
+import BasicSetting from "@/components/project/settings/BasicSetting.vue";
 
 const props = defineProps<{
   myProject: MyProjects | null;
@@ -78,11 +79,7 @@ async function deleteProject(id: string) {
     </TabsList>
     <Separator orientation="vertical" class="border-border h-full" />
     <TabsContent value="project" class="flex flex-col gap-4">
-      <PageTitle
-        title="プロジェクト設定"
-        description="このプロジェクトの設定を行います。"
-        size="medium"
-      />
+      <BasicSetting />
     </TabsContent>
     <TabsContent value="crawler" class="flex flex-col gap-4">
       <PageTitle
