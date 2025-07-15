@@ -168,16 +168,7 @@ class SupabaseQueue extends EventEmitter {
             `*,
               crawl_results!site_check_jobs_crawl_results_id_fkey(
                 id,
-                site_url,
-                total_pages,
-                successful_pages,
-                crawl_data(
-                  page_url,
-                  raw_html,
-                  status_code,
-                  error_message,
-                  created_at
-                )
+                site_url
               )
             `
           )
@@ -237,6 +228,13 @@ class SupabaseQueue extends EventEmitter {
   private async processJob(job: any) {
     const jobId = job.id;
     const timestamp = new Date().toISOString();
+    let crawlData: {
+      page_url: string;
+      raw_html: string;
+      status_code: number;
+      error_massage?: string;
+      created_at: string;
+    }[] = [];
 
     this.processingJobs.add(jobId);
     console.log(
@@ -265,6 +263,84 @@ class SupabaseQueue extends EventEmitter {
       // 初期進行状況: SEOチェック開始
       await updateProgress(10);
 
+      // クロール結果の件数取得
+      const { count, error: countError } = await supabase
+        .from("crawl_data")
+        .select("id", { count: "exact", head: true })
+        .eq("crawl_results_id", job.crawl_results_id);
+
+      if (countError) {
+        console.error(`[${timestamp}] raw_html件数取得エラー:`, countError);
+        throw countError;
+      }
+
+      const totalRecords = count || 0;
+      const batchSize = 10;
+      const totalBatches = Math.ceil(totalRecords / batchSize);
+
+      console.log(
+        `[${timestamp}] 取得対象データ: ${totalRecords}件, バッチ数: ${totalBatches}`
+      );
+
+      // クロール結果データの取得
+      for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+        const offset = batchIndex * batchSize;
+
+        console.log(
+          `[${timestamp}] バッチ ${
+            batchIndex + 1
+          }/${totalBatches} 開始 (offset: ${offset})`
+        );
+
+        const { data, error } = await supabase
+          .from("crawl_data")
+          .select("*")
+          .eq("crawl_results_id", job.crawl_results_id)
+          .order("created_at", { ascending: true })
+          .range(offset, offset + batchSize - 1);
+
+        if (error) {
+          console.error(
+            `[${timestamp}] バッチ ${batchIndex + 1} データ取得エラー:`,
+            error
+          );
+          throw error;
+        }
+
+        // データをマージ
+        if (data && data.length > 0) {
+          // データを正しくマッピング
+          const batchCrawlData = data.map((item) => ({
+            page_url: item.page_url,
+            raw_html: item.raw_html,
+            status_code: item.status_code,
+            error_message: item.error_message,
+            created_at: item.created_at,
+          }));
+
+          crawlData = crawlData.concat(batchCrawlData);
+
+          console.log(
+            `[${timestamp}] バッチ ${batchIndex + 1} 完了: ${
+              data.length
+            }件取得 (累計: ${crawlData.length}件)`
+          );
+        }
+
+        // バッチ処理の進行状況を更新 (10% -> 40%の範囲)
+        const batchProgress =
+          10 + Math.floor(((batchIndex + 1) / totalBatches) * 30);
+        await updateProgress(Math.min(batchProgress, 40));
+
+        // APIレート制限を避けるため、少し待機
+        if (batchIndex < totalBatches - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+      }
+
+      console.log(`[${timestamp}] 全データ取得完了: ${crawlData.length}件`);
+      await updateProgress(50);
+
       // SEOチェック実行
       console.log(
         `[${new Date().toISOString()}] SEOチェック実行開始: ${jobId}`
@@ -272,13 +348,14 @@ class SupabaseQueue extends EventEmitter {
       const { averageScore, improvementSuggestions } = await executeSeoCheck({
         projectId: job.project_id,
         crawlResultDataId: job.crawl_results_id,
-        crawlData: job.crawl_results.crawl_data,
+        crawlData: crawlData,
         seoCheckResultId: job.seo_check_results_id,
       });
 
       await updateProgress(60);
 
-      const totalScore = averageScore; // 仮のスコア
+      // SEOチェック結果の採点
+      const totalScore = averageScore;
 
       await updateProgress(80);
 
