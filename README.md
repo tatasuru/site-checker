@@ -172,6 +172,28 @@ npm run preview  # プロダクションビルドのプレビュー
 npm run generate # 静的サイト生成
 ```
 
+### TypeScript 型生成
+
+Supabase からの TypeScript 型を生成するには、フロントエンドディレクトリで以下を実行：
+
+```bash
+cd frontend
+
+# Supabase CLIのインストール（まだインストールしていない場合）
+npm install -g supabase
+
+# Supabaseプロジェクトにログイン
+supabase login
+
+# 型を生成
+supabase gen types typescript --project-id your-project-id > database.types.ts
+
+# または、.env.localのSUPABASE_URLを使用
+supabase gen types typescript --project-id $(echo $SUPABASE_URL | grep -o 'https://[^.]*' | sed 's/https://') > database.types.ts
+```
+
+詳細については[Supabase公式ドキュメント](https://supabase.com/docs/guides/api/rest/generating-types)を参照してください。
+
 ## 使用方法
 
 1. **アプリケーションにアクセス**: http://localhost:3000 に移動

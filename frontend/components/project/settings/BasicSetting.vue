@@ -4,6 +4,7 @@ import { useForm } from "vee-validate";
 import * as z from "zod";
 import type { MyProjects } from "@/types/project";
 import { toast } from "vue-sonner";
+import type { Database } from "@/database.types";
 
 type FormValues = {
   name: string;
@@ -13,8 +14,7 @@ type FormValues = {
 const props = defineProps<{
   myProject: MyProjects | null;
 }>();
-// TODO: Supabaseのクライアントを適切にインポート
-const supabase = useSupabaseClient<any>();
+const supabase = useSupabaseClient<Database>();
 const isSubmitting = ref<boolean>(false);
 
 /***************************
