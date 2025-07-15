@@ -78,24 +78,24 @@ async function deleteProject(id: string) {
       </TabsTrigger>
     </TabsList>
     <Separator orientation="vertical" class="border-border h-full" />
-    <TabsContent value="project" class="flex flex-col gap-4">
+    <TabsContent value="project" class="flex flex-col gap-8">
       <BasicSetting :myProject="props.myProject" />
     </TabsContent>
-    <TabsContent value="crawler" class="flex flex-col gap-4">
+    <TabsContent value="crawler" class="flex flex-col gap-8">
       <PageTitle
         title="クローラ設定"
         description="このプロジェクトのクローラ設定を行います。"
         size="medium"
       />
     </TabsContent>
-    <TabsContent value="seo-checker" class="flex flex-col gap-4">
+    <TabsContent value="seo-checker" class="flex flex-col gap-8">
       <PageTitle
         title="SEOチェック設定"
         description="このプロジェクトのSEOチェック設定を行います。"
         size="medium"
       />
     </TabsContent>
-    <TabsContent value="delete" class="flex flex-col gap-4">
+    <TabsContent value="delete" class="flex flex-col gap-8">
       <PageTitle
         title="プロジェクト削除"
         description="このプロジェクトを削除すると、関連するすべてのデータが失われます。"
