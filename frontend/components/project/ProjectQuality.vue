@@ -55,7 +55,7 @@ const columns: ColumnDef<MyProjectSeoMetaDetail>[] = [
           table.toggleAllPageRowsSelected(!!value),
         ariaLabel: "Select all",
         class:
-          "cursor-pointer data-[state=checked]:bg-purple data-[state=checked]:border-purple data-[state=indeterminate]:bg-purple data-[state=indeterminate]:border-purple text-white",
+          "cursor-pointer data-[state=checked]:bg-green data-[state=checked]:border-green data-[state=indeterminate]:bg-green data-[state=indeterminate]:border-green text-white",
       }),
     cell: ({ row }) =>
       h(Checkbox, {
@@ -63,7 +63,7 @@ const columns: ColumnDef<MyProjectSeoMetaDetail>[] = [
         "onUpdate:modelValue": (value) => row.toggleSelected(!!value),
         ariaLabel: "Select row",
         class:
-          "cursor-pointer data-[state=checked]:bg-purple data-[state=checked]:border-purple data-[state=indeterminate]:bg-purple text-white",
+          "cursor-pointer data-[state=checked]:bg-green data-[state=checked]:border-green data-[state=indeterminate]:bg-green text-white",
       }),
     enableSorting: false,
     enableHiding: false,
@@ -332,55 +332,10 @@ const columns: ColumnDef<MyProjectSeoMetaDetail>[] = [
       );
     },
     cell: ({ row }) => {
-      const keywords = row.getValue("status_code") as string[] | null;
-      if (!keywords || keywords.length === 0)
-        return h(
-          "div",
-          {
-            class: "text-muted-foreground",
-          },
-          "no status code",
-        );
-
-      return h(
-        Tooltip,
-        {},
-        {
-          default: () => [
-            h(
-              TooltipTrigger,
-              { asChild: true },
-              {
-                default: () =>
-                  h(
-                    "div",
-                    {
-                      class:
-                        "max-w-[120px] overflow-hidden text-ellipsis whitespace-nowrap cursor-help",
-                    },
-                    keywords,
-                  ),
-              },
-            ),
-            h(
-              TooltipContent,
-              { class: "max-w-[300px]" },
-              {
-                default: () =>
-                  h(
-                    "p",
-                    {
-                      class: "w-full break-words",
-                    },
-                    keywords,
-                  ),
-              },
-            ),
-          ],
-        },
-      );
+      const statusCode = row.getValue("status_code") as number;
+      return h("div", {}, statusCode);
     },
-    size: 120,
+    size: 80,
   },
   {
     accessorKey: "keywords",
