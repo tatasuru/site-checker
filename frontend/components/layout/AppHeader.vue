@@ -8,6 +8,22 @@ const store = useStore();
 const sidebarStore = useSidebarStore();
 const route = useRoute();
 
+// Profile loading state
+const isProfileLoading = ref(true);
+
+// Watch for profile data to be loaded
+watch([user, () => store.profile], ([newUser, newProfile]) => {
+  if (newUser && newProfile?.name) {
+    isProfileLoading.value = false;
+  } else if (newUser && !newProfile?.name) {
+    // User is authenticated but profile not loaded yet, keep loading
+    isProfileLoading.value = true;
+  } else if (!newUser) {
+    // No user, not loading
+    isProfileLoading.value = false;
+  }
+}, { immediate: true });
+
 /************************
  * sign out
  *************************/
@@ -69,7 +85,7 @@ const toggleSidebar = () => {
     <!-- right menu -->
     <div class="flex items-center gap-1 md:gap-2">
       <!-- avatar menu -->
-      <DropdownMenu v-if="user">
+      <DropdownMenu v-if="user && !isProfileLoading">
         <DropdownMenuTrigger as-child>
           <Avatar :size="'sm'" class="cursor-pointer">
             <AvatarImage :src="store.profile.avatar_url || ''" alt="avatar" />
@@ -117,6 +133,15 @@ const toggleSidebar = () => {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <!-- Loading avatar placeholder -->
+      <div v-else-if="user && isProfileLoading" class="flex items-center gap-1">
+        <Avatar :size="'sm'" class="animate-pulse">
+          <AvatarFallback class="bg-muted">
+            <Icon name="mdi:loading" class="animate-spin !size-4" />
+          </AvatarFallback>
+        </Avatar>
+      </div>
 
       <!-- signIn and login buttons  -->
       <div v-if="!user" class="flex items-center gap-2 md:gap-6">
