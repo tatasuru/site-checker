@@ -95,7 +95,7 @@ const columns: ColumnDef<MyProjectSeoMetaDetail>[] = [
           onClick: () => selectDialogContent(row.getValue("id") as string),
           class: "text-link hover:underline",
         },
-        row.getValue("page_url") as string,
+        () => row.getValue("page_url") as string,
       );
     },
     size: 300,
@@ -438,8 +438,6 @@ function selectDialogContent(id: string) {
 
   isDialogOpen.value = true;
 
-  console.log("Selected content:", selectedContent);
-
   dialogContents.value = [
     {
       title: "Twitter OGP",
@@ -596,7 +594,10 @@ function selectDialogContent(id: string) {
           <DialogHeader>
             <DialogTitle>OGP確認</DialogTitle>
             <DialogDescription>
-              SNSシェア時のOGP画像・タイトル・説明文のサイズ・見え方を確認できます。
+              <span class="text-link">
+                {{ dialogContents?.[0]?.pageUrl || "" }}
+              </span>
+              のSNSシェア時のOGP画像・タイトル・説明文のサイズ・見え方を確認できます。
             </DialogDescription>
           </DialogHeader>
           <Accordion

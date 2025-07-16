@@ -46,23 +46,4 @@ export default defineNuxtRouteMiddleware(async (to, _from) => {
     // Clear store when user is not authenticated
     store.clearProfile();
   }
-
-  //watch for changes in the user state
-  watch(user, async (newUser) => {
-    if (newUser && !store.profile.name) {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", newUser?.id)
-        .single();
-
-      if (error || !data) {
-        console.error("Error fetching profile:", error);
-        return await navigateTo("/login");
-      }
-
-      const profile = data as Profile;
-      store.setProfile(profile);
-    }
-  });
 });

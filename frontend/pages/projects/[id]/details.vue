@@ -199,7 +199,7 @@ const {
     return data;
   },
   {
-    server: false, // クライアントサイドでのみ実行
+    server: false, // only run on client side
     default: () => null,
   },
 );
@@ -207,36 +207,33 @@ const {
 // for SEO check results
 const {
   data: seoData,
-  pending,
+  pending: seoPending,
   refresh,
 } = await useAsyncData(
-  `seo-score-${route.params.id}`,
+  `seo-results-${route.params.id}`,
   async () => {
     const data = await fetchSeoCheckResults(route.params.id as string);
     myProjectSeoCheckResults.value = data;
     return data;
   },
   {
-    server: false, // クライアントサイドでのみ実行
+    server: false, // only run on client side
     default: () => null,
   },
 );
 
 // for SEO meta details
-const { data: seoMetaData } = await useAsyncData(
-  `seo-meta-details-${route.params.id}`,
-  async () => {
-    if (myProjectSeoCheckResults.value) {
-      const data = await fetchSeoMetaDetails(myProjectSeoCheckResults.value.id);
-      myProjectSeoMetaDetails.value = data;
-      return data;
+watch(
+  () => seoData.value?.id,
+  async (newId) => {
+    if (newId) {
+      myProjectSeoMetaDetails.value = await fetchSeoMetaDetails(newId);
+      return myProjectSeoMetaDetails.value;
+    } else {
+      myProjectSeoMetaDetails.value = null;
     }
-    return null;
   },
-  {
-    server: false, // クライアントサイドでのみ実行
-    default: () => null,
-  },
+  { immediate: true },
 );
 
 const refreshScore = async () => {
