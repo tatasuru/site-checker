@@ -237,6 +237,11 @@ watch(
 );
 
 const refreshScore = async () => {
+  if (myProject.value?.crawl_results?.[0].status === "in_progress") {
+    toast.warning("サイトチェックが終了するまでお待ちください。");
+    return;
+  }
+
   await refresh();
 
   if (myProjectSeoCheckResults.value) {
