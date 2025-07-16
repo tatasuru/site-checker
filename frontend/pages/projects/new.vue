@@ -143,8 +143,8 @@ const onSubmit = async (values: formValues) => {
   >
     <div class="flex items-center justify-between">
       <PageTitle
-        title="新規サイト登録"
-        description="品質チェックするサイトを登録します。"
+        title="新規プロジェクト作成"
+        description="新しいサイトチェックプロジェクトを作成します"
         size="large"
       />
 

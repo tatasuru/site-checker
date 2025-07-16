@@ -21,11 +21,9 @@ const actions = [
 
 const route = useRoute();
 const isActive = (url: string) => {
-  return (
-    (url.includes("/settings") && route.path.startsWith("/settings")) ||
-    (url.includes("/projects") && route.path.startsWith("/projects")) ||
-    route.path.includes(url)
-  );
+  return url === "/projects"
+    ? route.path.startsWith("/projects") && !route.path.includes("new")
+    : route.path === url;
 };
 </script>
 
@@ -85,6 +83,9 @@ const isActive = (url: string) => {
               <SidebarMenuButton
                 asChild
                 class="hover:bg-green/20 hover:text-green focus:bg-green/20 focus:text-green active:bg-green/20 active:text-green"
+                :class="{
+                  'bg-green/20 text-green': isActive(action.url),
+                }"
               >
                 <NuxtLink :to="action.url">
                   <Icon :name="action.icon" />
