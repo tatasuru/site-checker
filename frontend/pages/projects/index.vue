@@ -51,14 +51,48 @@ async function fetchSiteProjects(userId: string) {
  ************************/
 let subscription: any = null;
 onMounted(async () => {
-  if (!user.value) {
-    console.error("User is not authenticated");
-    return;
-  }
-
   isLoading.value = true;
-  myProjects.value = await fetchSiteProjects(user.value.id);
-  isLoading.value = false;
+
+  // Wait for user session to be initialized (with timeout)
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error("Authentication timeout"));
+      }, 10000); // 10 second timeout
+
+      if (user.value) {
+        clearTimeout(timeout);
+        resolve();
+        return;
+      }
+
+      const unwatch = watch(
+        user,
+        (newUser) => {
+          if (newUser) {
+            clearTimeout(timeout);
+            unwatch();
+            resolve();
+          }
+        },
+        { immediate: true },
+      );
+    });
+
+    if (!user.value) {
+      console.error("User is not authenticated");
+      await navigateTo("/login");
+      return;
+    }
+
+    myProjects.value = await fetchSiteProjects(user.value.id);
+  } catch (error) {
+    console.error("Authentication failed:", error);
+    await navigateTo("/login");
+    return;
+  } finally {
+    isLoading.value = false;
+  }
 
   // TODO:Set up subscription after user is confirmed
   subscription = supabase

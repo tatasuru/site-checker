@@ -381,8 +381,15 @@ onBeforeUnmount(() => {
 
       <!-- サイトチェック詳細 -->
       <TabsContent value="quality">
+        <div v-if="isLoading" class="flex h-fit items-center justify-center">
+          <Icon
+            name="mdi:loading"
+            class="text-muted-foreground mx-auto my-8 !size-12 animate-spin"
+          />
+        </div>
+
         <ProjectQuality
-          v-if="!isLoading && myProject"
+          v-else
           :myProject="myProject"
           :myProjectSeoCheckResults="myProjectSeoCheckResults"
           :myProjectSeoMetaDetails="myProjectSeoMetaDetails"
@@ -391,10 +398,14 @@ onBeforeUnmount(() => {
 
       <!-- プロジェクト設定 -->
       <TabsContent value="settings">
-        <ProjectSettings
-          v-if="!isLoading && myProject"
-          :myProject="myProject"
-        />
+        <div v-if="isLoading" class="flex h-fit items-center justify-center">
+          <Icon
+            name="mdi:loading"
+            class="text-muted-foreground mx-auto my-8 !size-12 animate-spin"
+          />
+        </div>
+
+        <ProjectSettings v-else :myProject="myProject" />
       </TabsContent>
     </Tabs>
   </div>

@@ -6,7 +6,7 @@ const user = useSupabaseUser();
 
 definePageMeta({
   middleware: "auth",
-  layout: "home",
+  layout: "custom",
 });
 
 const login = async (providerName: "google" | "github") => {

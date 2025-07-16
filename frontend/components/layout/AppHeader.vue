@@ -8,12 +8,6 @@ const store = useStore();
 const sidebarStore = useSidebarStore();
 const route = useRoute();
 
-interface Profile {
-  id: string;
-  name: string;
-  avatar_url: string;
-}
-
 /************************
  * sign out
  *************************/
@@ -31,25 +25,6 @@ const signOutWithGoogle = async () => {
 const toggleSidebar = () => {
   sidebarStore.toggleSidebar();
 };
-
-// for initializing store on mount with user profile
-onMounted(async () => {
-  if (user.value && !store.profile.name) {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.value?.id)
-      .single();
-
-    if (error || !data) {
-      console.error("Error fetching profile:", error);
-      return await navigateTo("/login");
-    }
-
-    const profile = data as Profile;
-    store.setProfile(profile);
-  }
-});
 </script>
 
 <template>
