@@ -71,20 +71,6 @@ const cardContents = computed(() => {
         ? `${myProject.value.crawl_results?.[0].total_pages} ページ`
         : "チェックされたページはありません",
     },
-    // {
-    //   title: "成功ページ数",
-    //   icon: "mdi:book-open-page-variant",
-    //   description: myProject.value.crawl_results?.[0].successful_pages
-    //     ? `${myProject.value.crawl_results?.[0].successful_pages} ページ`
-    //     : "チェックされたページはありません",
-    // },
-    // {
-    //   title: "失敗ページ数",
-    //   icon: "mdi:book-open-page-variant",
-    //   description: myProject.value.crawl_results?.[0].failed_pages
-    //     ? `${myProject.value.crawl_results?.[0].failed_pages} ページ`
-    //     : "チェックされたページはありません",
-    // },
     {
       title: "チェック開始日時",
       icon: "mdi:clock",
@@ -99,8 +85,6 @@ const cardContents = computed(() => {
             minute: "2-digit",
           })
         : "まだチェックが実行されていません",
-      // buttonLabel: "サイトチェック設定へ",
-      // buttonLink: `/sites/${myProject.value.id}/settings`,
     },
     {
       title: "チェック完了日時",
@@ -116,8 +100,6 @@ const cardContents = computed(() => {
             minute: "2-digit",
           })
         : "まだチェックが実行されていません",
-      // buttonLabel: "サイトチェック設定へ",
-      // buttonLink: `/sites/${myProject.value.id}/settings`,
     },
   ];
 });
@@ -204,6 +186,71 @@ async function fetchSeoMetaDetails(
  ************************/
 let subscription: any = null;
 
+// for project overview
+const {
+  data: projectData,
+  pending: projectPending,
+  refresh: refreshProject,
+} = await useAsyncData(
+  `project-overview-${route.params.id}`,
+  async () => {
+    const data = await fetchProjectDetails(route.params.id as string);
+    myProject.value = data;
+    return data;
+  },
+  {
+    server: false, // クライアントサイドでのみ実行
+    default: () => null,
+  },
+);
+
+// for SEO check results
+const {
+  data: seoData,
+  pending,
+  refresh,
+} = await useAsyncData(
+  `seo-score-${route.params.id}`,
+  async () => {
+    const data = await fetchSeoCheckResults(route.params.id as string);
+    myProjectSeoCheckResults.value = data;
+    return data;
+  },
+  {
+    server: false, // クライアントサイドでのみ実行
+    default: () => null,
+  },
+);
+
+// for SEO meta details
+const { data: seoMetaData } = await useAsyncData(
+  `seo-meta-details-${route.params.id}`,
+  async () => {
+    if (myProjectSeoCheckResults.value) {
+      const data = await fetchSeoMetaDetails(myProjectSeoCheckResults.value.id);
+      myProjectSeoMetaDetails.value = data;
+      return data;
+    }
+    return null;
+  },
+  {
+    server: false, // クライアントサイドでのみ実行
+    default: () => null,
+  },
+);
+
+const refreshScore = async () => {
+  await refresh();
+
+  if (myProjectSeoCheckResults.value) {
+    myProjectSeoMetaDetails.value = await fetchSeoMetaDetails(
+      myProjectSeoCheckResults.value.id,
+    );
+  }
+
+  toast.success("SEOスコアを更新しました");
+};
+
 onMounted(async () => {
   if (!user.value) {
     console.error("User is not authenticated");
@@ -212,23 +259,6 @@ onMounted(async () => {
   }
 
   try {
-    // プロジェクトデータを取得
-    myProject.value = await fetchProjectDetails(route.params.id as string);
-
-    // SEOチェック結果を取得
-    if (myProject.value) {
-      myProjectSeoCheckResults.value = await fetchSeoCheckResults(
-        myProject.value.id,
-      );
-    }
-
-    // SEOメタデータを取得
-    if (myProjectSeoCheckResults.value) {
-      myProjectSeoMetaDetails.value = await fetchSeoMetaDetails(
-        myProjectSeoCheckResults.value.id,
-      );
-    }
-
     // リアルタイム監視を設定
     subscription = supabase
       .channel(`project-${route.params.id}`)
@@ -294,16 +324,16 @@ onBeforeUnmount(() => {
 /************************
  * helper functions
  ************************/
-// タブを押した時にrouteのパラメータを更新
+// when tab changes, reset scroll position and update URL
 const currentTab = ref<"overview" | "quality" | "settings">(
   (route.query.tab as "overview" | "quality" | "settings") || "overview",
 );
 const router = useRouter();
 function handleTabChange(value: "overview" | "quality" | "settings") {
   currentTab.value = value;
-  // タブが変更されたらスクロール位置をトップに戻す
+  // when tab changes, scroll to top
   window.scrollTo({ top: 0, behavior: "smooth" });
-  // URLのクエリパラメータを更新
+  // update URL query parameter
   const query = { ...route.query, tab: value };
   router.push({ path: route.path, query });
 }
@@ -389,6 +419,7 @@ function handleTabChange(value: "overview" | "quality" | "settings") {
           :myProject="myProject"
           :myProjectSeoCheckResults="myProjectSeoCheckResults"
           :cardContents="cardContents"
+          @refreshScore="refreshScore"
         />
       </TabsContent>
 
@@ -406,6 +437,7 @@ function handleTabChange(value: "overview" | "quality" | "settings") {
           :myProject="myProject"
           :myProjectSeoCheckResults="myProjectSeoCheckResults"
           :myProjectSeoMetaDetails="myProjectSeoMetaDetails"
+          @refreshScore="refreshScore"
         />
       </TabsContent>
 

@@ -105,7 +105,7 @@ server.post("/completed-crawler", async (request, reply) => {
             total_score: null,
             meta_score: null,
             improvement_suggestions: null,
-            checked_at: new Date().toISOString(),
+            checked_at: null,
           })
           .select()
           .single();

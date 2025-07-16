@@ -38,6 +38,11 @@ const props = defineProps<{
   myProjectSeoMetaDetails: MyProjectSeoMetaDetail[] | null;
 }>();
 
+const emit = defineEmits(["refreshScore"]);
+function refreshScore() {
+  emit("refreshScore");
+}
+
 const columns: ColumnDef<MyProjectSeoMetaDetail>[] = [
   {
     id: "select",
@@ -407,11 +412,20 @@ const rightAccordionItems = [
 <template>
   <div class="flex w-full flex-col gap-12">
     <div class="flex flex-col gap-4">
-      <PageTitle
-        title="チェック結果"
-        description="サイトのSEOメタ情報を確認できます。"
-        size="small"
-      />
+      <div class="flex items-center justify-between">
+        <PageTitle
+          title="チェック結果"
+          description="サイトのSEOメタ情報を確認できます。"
+          size="small"
+        />
+        <Button
+          v-if="!props.myProjectSeoCheckResults?.checked_at"
+          @click="refreshScore"
+          variant="mainOutline"
+        >
+          情報を更新する
+        </Button>
+      </div>
 
       <div class="flex items-center gap-12">
         <ClientOnly>

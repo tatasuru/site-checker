@@ -16,6 +16,11 @@ const props = defineProps<{
   }[];
 }>();
 
+const emit = defineEmits(["refreshScore"]);
+function refreshScore() {
+  emit("refreshScore");
+}
+
 // for overview donut
 const totalPieScores = computed(() => {
   if (!props.myProjectSeoCheckResults) return [0, 0];
@@ -128,11 +133,20 @@ const color = (d: number, i: number) => {
   </div>
 
   <div class="flex flex-col gap-2 pb-6">
-    <PageTitle
-      title="サイトチェック概要"
-      description="サイトのSEOチェック結果を確認できます。"
-      size="small"
-    />
+    <div class="flex items-center justify-between">
+      <PageTitle
+        title="サイトチェック概要"
+        description="サイトのSEOチェック結果を確認できます。"
+        size="small"
+      />
+      <Button
+        v-if="!props.myProjectSeoCheckResults?.checked_at"
+        @click="refreshScore"
+        variant="mainOutline"
+      >
+        情報を更新する
+      </Button>
+    </div>
 
     <div class="flex w-full gap-6">
       <div class="flex w-full items-start gap-4">
@@ -194,7 +208,7 @@ const color = (d: number, i: number) => {
                   />
                 </VisSingleContainer>
 
-                <div class="flex flex-col items-start gap-2">
+                <div class="flex flex-col items-start gap-4">
                   <div class="flex flex-col gap-1">
                     <p class="text-sm font-semibold">SEOチェック結果</p>
                     <span class="text-muted-foreground text-xs">
@@ -204,12 +218,9 @@ const color = (d: number, i: number) => {
                   <Button
                     as-child
                     variant="link"
-                    class="text-green px-0 text-xs"
+                    class="text-green size-fit p-0 text-xs"
                   >
-                    <NuxtLink
-                      to="/projects"
-                      class="flex w-fit items-center gap-2"
-                    >
+                    <NuxtLink to="/projects" class="flex items-center gap-2">
                       詳細を確認する
                       <Icon name="mdi-arrow-right" />
                     </NuxtLink>
