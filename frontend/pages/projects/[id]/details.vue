@@ -422,6 +422,7 @@ function handleTabChange(value: "overview" | "quality" | "settings") {
           :myProjectSeoCheckResults="myProjectSeoCheckResults"
           :cardContents="cardContents"
           @refreshScore="refreshScore"
+          @tabChange="handleTabChange"
         />
       </TabsContent>
 

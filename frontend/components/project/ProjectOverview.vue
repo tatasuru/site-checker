@@ -16,9 +16,12 @@ const props = defineProps<{
   }[];
 }>();
 
-const emit = defineEmits(["refreshScore"]);
+const emit = defineEmits(["refreshScore", "tabChange"]);
 function refreshScore() {
   emit("refreshScore");
+}
+function handleTabChange(value: "overview" | "quality" | "settings") {
+  emit("tabChange", value);
 }
 
 // for overview donut
@@ -174,14 +177,13 @@ const color = (d: number, i: number) => {
                     全項目のチェック結果をもとに総合的な評価を表示します。
                   </span>
                 </div>
-                <Button as-child variant="link" class="text-green px-0">
-                  <NuxtLink
-                    to="/projects"
-                    class="flex w-fit items-center gap-2"
-                  >
-                    詳細を確認する
-                    <Icon name="mdi-arrow-right" />
-                  </NuxtLink>
+                <Button
+                  @click="handleTabChange('quality')"
+                  variant="link"
+                  class="text-green p-0"
+                >
+                  詳細を確認する
+                  <Icon name="mdi-arrow-right" />
                 </Button>
               </div>
             </CardContent>
@@ -216,14 +218,12 @@ const color = (d: number, i: number) => {
                     </span>
                   </div>
                   <Button
-                    as-child
+                    @click="handleTabChange('quality')"
                     variant="link"
-                    class="text-green size-fit p-0 text-xs"
+                    class="text-green p-0 text-xs"
                   >
-                    <NuxtLink to="/projects" class="flex items-center gap-2">
-                      詳細を確認する
-                      <Icon name="mdi-arrow-right" />
-                    </NuxtLink>
+                    詳細を確認する
+                    <Icon name="mdi-arrow-right" />
                   </Button>
                 </div>
               </CardContent>

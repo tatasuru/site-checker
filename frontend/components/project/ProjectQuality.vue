@@ -640,12 +640,12 @@ function selectDialogContent(id: string) {
                   class="gap-0 p-0"
                 >
                   <CardHeader
-                    class="relative flex flex-col gap-0 rounded-xl px-0"
+                    class="relative flex flex-col gap-0 rounded-t-xl px-0"
                   >
                     <NuxtImg
                       v-if="item.content?.og_tags"
                       :src="item.content.og_tags.og_image"
-                      class="w-full rounded-xl object-cover"
+                      class="w-full rounded-t-xl object-cover"
                       alt="OGP Image"
                     />
                   </CardHeader>
