@@ -191,7 +191,7 @@ const color = (d: number, i: number) => {
         </ClientOnly>
 
         <div
-          class="grid w-full grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4"
+          class="grid w-full grid-cols-[repeat(auto-fill,minmax(360px,1fr))] gap-4"
         >
           <ClientOnly>
             <Card class="py-3">
@@ -220,7 +220,7 @@ const color = (d: number, i: number) => {
                   <Button
                     @click="handleTabChange('quality')"
                     variant="link"
-                    class="text-green p-0 text-xs"
+                    class="text-green size-fit p-0 text-xs"
                   >
                     詳細を確認する
                     <Icon name="mdi-arrow-right" />
