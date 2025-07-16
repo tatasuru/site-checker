@@ -52,8 +52,8 @@ const cardContents = computed(() => {
       title: "チェック対象URL",
       icon: "mdi:attachment",
       description: myProject.value.site_url || "URLが設定されていません",
-      buttonLabel: "サイトチェック設定へ",
-      buttonLink: `/sites/${myProject.value.id}/settings`,
+      // buttonLabel: "サイトチェック設定へ",
+      // buttonLink: `/sites/${myProject.value.id}/settings`,
     },
     {
       title: "チェックステータス",
@@ -65,8 +65,8 @@ const cardContents = computed(() => {
             myProject.value.crawl_results?.[0].status || "unknown",
           )
         : "ステータスが設定されていません",
-      buttonLabel: "サイトチェック設定へ",
-      buttonLink: `/sites/${myProject.value.id}/settings`,
+      // buttonLabel: "サイトチェック設定へ",
+      // buttonLink: `/sites/${myProject.value.id}/settings`,
     },
     {
       title: "チェックページ数",
@@ -74,8 +74,8 @@ const cardContents = computed(() => {
       description: myProject.value.crawl_results?.[0].total_pages
         ? `${myProject.value.crawl_results?.[0].total_pages} ページ`
         : "チェックされたページはありません",
-      buttonLabel: "サイトチェック設定へ",
-      buttonLink: `/sites/${myProject.value.id}/settings`,
+      // buttonLabel: "サイトチェック設定へ",
+      // buttonLink: `/sites/${myProject.value.id}/settings`,
     },
     {
       title: "成功ページ数",
@@ -83,8 +83,8 @@ const cardContents = computed(() => {
       description: myProject.value.crawl_results?.[0].successful_pages
         ? `${myProject.value.crawl_results?.[0].successful_pages} ページ`
         : "チェックされたページはありません",
-      buttonLabel: "サイトチェック設定へ",
-      buttonLink: `/sites/${myProject.value.id}/settings`,
+      // buttonLabel: "サイトチェック設定へ",
+      // buttonLink: `/sites/${myProject.value.id}/settings`,
     },
     {
       title: "失敗ページ数",
@@ -92,11 +92,28 @@ const cardContents = computed(() => {
       description: myProject.value.crawl_results?.[0].failed_pages
         ? `${myProject.value.crawl_results?.[0].failed_pages} ページ`
         : "チェックされたページはありません",
-      buttonLabel: "サイトチェック設定へ",
-      buttonLink: `/sites/${myProject.value.id}/settings`,
+      // buttonLabel: "サイトチェック設定へ",
+      // buttonLink: `/sites/${myProject.value.id}/settings`,
     },
     {
-      title: "最新のチェック日時",
+      title: "チェック開始日時",
+      icon: "mdi:clock",
+      description: myProject.value.crawl_results?.[0].started_at
+        ? new Date(
+            myProject.value.crawl_results?.[0].started_at,
+          ).toLocaleString("ja-JP", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : "まだチェックが実行されていません",
+      // buttonLabel: "サイトチェック設定へ",
+      // buttonLink: `/sites/${myProject.value.id}/settings`,
+    },
+    {
+      title: "チェック完了日時",
       icon: "mdi:clock",
       description: myProject.value.crawl_results?.[0].completed_at
         ? new Date(
@@ -109,8 +126,8 @@ const cardContents = computed(() => {
             minute: "2-digit",
           })
         : "まだチェックが実行されていません",
-      buttonLabel: "サイトチェック設定へ",
-      buttonLink: `/sites/${myProject.value.id}/settings`,
+      // buttonLabel: "サイトチェック設定へ",
+      // buttonLink: `/sites/${myProject.value.id}/settings`,
     },
   ];
 });
@@ -131,6 +148,7 @@ async function fetchProjectDetails(id: string): Promise<MyProjects | null> {
         total_pages,
         successful_pages,
         failed_pages,
+        started_at,
         completed_at
       )`,
       )

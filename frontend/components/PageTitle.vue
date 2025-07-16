@@ -12,7 +12,7 @@ const titleSize = computed(() => {
     case "medium":
       return "md:text-xl text-xl";
     case "small":
-      return "md:text-base text-base";
+      return "md:text-base text-base border-l-green border-l-2 pl-2";
     default:
       return "md:text-2xl text-xl";
   }
@@ -30,13 +30,22 @@ const descriptionSize = computed(() => {
       return "md:text-sm text-sm";
   }
 });
+
+const tag = computed(() => {
+  return props.size === "small" ? "h2" : "h1";
+});
 </script>
 
 <template>
   <div class="inline-flex flex-col gap-1">
-    <h1 class="font-bold" :class="titleSize">
+    <component
+      v-if="props.title"
+      :is="tag"
+      class="font-bold"
+      :class="titleSize"
+    >
       {{ props.title }}
-    </h1>
+    </component>
     <p
       v-if="props.description"
       class="text-muted-foreground"
