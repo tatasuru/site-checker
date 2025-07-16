@@ -52,8 +52,6 @@ const cardContents = computed(() => {
       title: "チェック対象URL",
       icon: "mdi:attachment",
       description: myProject.value.site_url || "URLが設定されていません",
-      // buttonLabel: "サイトチェック設定へ",
-      // buttonLink: `/sites/${myProject.value.id}/settings`,
     },
     {
       title: "チェックステータス",
@@ -65,8 +63,6 @@ const cardContents = computed(() => {
             myProject.value.crawl_results?.[0].status || "unknown",
           )
         : "ステータスが設定されていません",
-      // buttonLabel: "サイトチェック設定へ",
-      // buttonLink: `/sites/${myProject.value.id}/settings`,
     },
     {
       title: "チェックページ数",
@@ -74,27 +70,21 @@ const cardContents = computed(() => {
       description: myProject.value.crawl_results?.[0].total_pages
         ? `${myProject.value.crawl_results?.[0].total_pages} ページ`
         : "チェックされたページはありません",
-      // buttonLabel: "サイトチェック設定へ",
-      // buttonLink: `/sites/${myProject.value.id}/settings`,
     },
-    {
-      title: "成功ページ数",
-      icon: "mdi:book-open-page-variant",
-      description: myProject.value.crawl_results?.[0].successful_pages
-        ? `${myProject.value.crawl_results?.[0].successful_pages} ページ`
-        : "チェックされたページはありません",
-      // buttonLabel: "サイトチェック設定へ",
-      // buttonLink: `/sites/${myProject.value.id}/settings`,
-    },
-    {
-      title: "失敗ページ数",
-      icon: "mdi:book-open-page-variant",
-      description: myProject.value.crawl_results?.[0].failed_pages
-        ? `${myProject.value.crawl_results?.[0].failed_pages} ページ`
-        : "チェックされたページはありません",
-      // buttonLabel: "サイトチェック設定へ",
-      // buttonLink: `/sites/${myProject.value.id}/settings`,
-    },
+    // {
+    //   title: "成功ページ数",
+    //   icon: "mdi:book-open-page-variant",
+    //   description: myProject.value.crawl_results?.[0].successful_pages
+    //     ? `${myProject.value.crawl_results?.[0].successful_pages} ページ`
+    //     : "チェックされたページはありません",
+    // },
+    // {
+    //   title: "失敗ページ数",
+    //   icon: "mdi:book-open-page-variant",
+    //   description: myProject.value.crawl_results?.[0].failed_pages
+    //     ? `${myProject.value.crawl_results?.[0].failed_pages} ページ`
+    //     : "チェックされたページはありません",
+    // },
     {
       title: "チェック開始日時",
       icon: "mdi:clock",
@@ -300,6 +290,23 @@ onBeforeUnmount(() => {
     subscription = null;
   }
 });
+
+/************************
+ * helper functions
+ ************************/
+// タブを押した時にrouteのパラメータを更新
+const currentTab = ref<"overview" | "quality" | "settings">(
+  (route.query.tab as "overview" | "quality" | "settings") || "overview",
+);
+const router = useRouter();
+function handleTabChange(value: "overview" | "quality" | "settings") {
+  currentTab.value = value;
+  // タブが変更されたらスクロール位置をトップに戻す
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  // URLのクエリパラメータを更新
+  const query = { ...route.query, tab: value };
+  router.push({ path: route.path, query });
+}
 </script>
 
 <template>
@@ -347,7 +354,13 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- メインコンテンツ -->
-    <Tabs default-value="overview" class="w-full flex-1 gap-4">
+    <Tabs
+      v-model="currentTab"
+      @update:model-value="
+        handleTabChange($event as 'overview' | 'quality' | 'settings')
+      "
+      class="w-full flex-1 gap-4"
+    >
       <TabsList
         class="bg-background border-border sticky top-0 z-10 w-full justify-start rounded-none border-b p-0"
       >

@@ -49,7 +49,11 @@ const color = (d: number, i: number) => {
 
 <template>
   <div class="flex flex-col gap-2">
-    <PageTitle title="サイトクロール状況" description="" size="small" />
+    <PageTitle
+      title="サイトクロール状況"
+      description="サイトのクロール状況を確認できます。"
+      size="small"
+    />
 
     <div
       class="grid w-full grid-cols-[repeat(auto-fill,minmax(350px,1fr))] gap-3"
@@ -83,18 +87,27 @@ const color = (d: number, i: number) => {
           />
         </CardHeader>
         <CardContent class="px-4">
-          <p
+          <component
+            :is="card.title === 'チェック対象URL' ? 'a' : 'p'"
+            :href="
+              card.title === 'チェック対象URL'
+                ? props.myProject?.site_url
+                : undefined
+            "
+            :target="card.title === 'チェック対象URL' ? '_blank' : undefined"
             class="text-base font-semibold tracking-wider transition-all duration-200"
             :class="
               card.title === 'チェックステータス'
                 ? getStatusColor(
                     props.myProject?.crawl_results?.[0].status || 'unknown',
                   )
-                : 'text-green'
+                : card.title === 'チェック対象URL'
+                  ? 'text-link underline hover:opacity-80'
+                  : 'text-muted-foreground'
             "
           >
             {{ card.description }}
-          </p>
+          </component>
           <Button
             v-if="card.buttonLabel"
             as-child
@@ -114,35 +127,37 @@ const color = (d: number, i: number) => {
     </div>
   </div>
 
-  <div class="flex flex-col gap-2">
-    <PageTitle title="サイトチェック概要" description="" size="small" />
+  <div class="flex flex-col gap-2 pb-6">
+    <PageTitle
+      title="サイトチェック概要"
+      description="サイトのSEOチェック結果を確認できます。"
+      size="small"
+    />
 
     <div class="flex w-full gap-6">
-      <div
-        class="grid w-full grid-cols-[repeat(auto-fill,minmax(420px,1fr))] gap-4"
-      >
+      <div class="flex w-full items-start gap-4">
         <ClientOnly>
-          <Card class="py-4">
-            <CardContent class="flex items-center gap-4 px-6">
+          <Card class="h-fit min-w-[420px] py-2">
+            <CardContent class="flex flex-col items-center gap-4 px-8">
               <VisSingleContainer
                 :data="totalPieScores"
-                class="small-donut !h-24 !w-24"
+                class="large-donut !h-64 !w-64"
               >
                 <VisDonut
                   :value="totalValue"
-                  :cornerRadius="2"
+                  :cornerRadius="5"
                   :color="totalColor"
-                  :arcWidth="5"
-                  :radius="45"
+                  :arcWidth="15"
+                  :radius="100"
                   :centralLabel="`${props.myProjectSeoCheckResults?.total_score || 0}点`"
                 />
               </VisSingleContainer>
 
-              <div class="flex flex-col items-start gap-2">
+              <div class="flex w-full flex-col items-start gap-2">
                 <div class="flex flex-col gap-1">
                   <p class="text-base font-semibold">総合評価</p>
                   <span class="text-muted-foreground text-sm">
-                    全項目の総合評価点数
+                    全項目のチェック結果をもとに総合的な評価を表示します。
                   </span>
                 </div>
                 <Button as-child variant="link" class="text-green px-0">
@@ -159,51 +174,66 @@ const color = (d: number, i: number) => {
           </Card>
         </ClientOnly>
 
-        <ClientOnly>
-          <Card class="py-4">
-            <CardContent class="flex items-center gap-4 px-6">
-              <VisSingleContainer
-                :data="pieScores"
-                class="small-donut !h-24 !w-24"
-              >
-                <VisDonut
-                  :value="value"
-                  :cornerRadius="2"
-                  :color="color"
-                  :arcWidth="5"
-                  :radius="45"
-                  :centralLabel="`${props.myProjectSeoCheckResults?.total_score || 0}点`"
-                />
-              </VisSingleContainer>
+        <div
+          class="grid w-full grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4"
+        >
+          <ClientOnly>
+            <Card class="py-3">
+              <CardContent class="flex items-center gap-4 px-6">
+                <VisSingleContainer
+                  :data="pieScores"
+                  class="small-donut !h-20 !w-20"
+                >
+                  <VisDonut
+                    :value="value"
+                    :cornerRadius="2"
+                    :color="color"
+                    :arcWidth="5"
+                    :radius="40"
+                    :centralLabel="`${props.myProjectSeoCheckResults?.total_score || 0}点`"
+                  />
+                </VisSingleContainer>
 
-              <div class="flex flex-col items-start gap-2">
-                <div class="flex flex-col gap-1">
-                  <p class="text-base font-semibold">SEOチェック結果</p>
-                  <span class="text-muted-foreground text-sm">
-                    SEOに関するチェック結果の概要
-                  </span>
-                </div>
-                <Button as-child variant="link" class="text-green px-0">
-                  <NuxtLink
-                    to="/projects"
-                    class="flex w-fit items-center gap-2"
+                <div class="flex flex-col items-start gap-2">
+                  <div class="flex flex-col gap-1">
+                    <p class="text-sm font-semibold">SEOチェック結果</p>
+                    <span class="text-muted-foreground text-xs">
+                      SEOに関するチェック結果の概要
+                    </span>
+                  </div>
+                  <Button
+                    as-child
+                    variant="link"
+                    class="text-green px-0 text-xs"
                   >
-                    詳細を確認する
-                    <Icon name="mdi-arrow-right" />
-                  </NuxtLink>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </ClientOnly>
+                    <NuxtLink
+                      to="/projects"
+                      class="flex w-fit items-center gap-2"
+                    >
+                      詳細を確認する
+                      <Icon name="mdi-arrow-right" />
+                    </NuxtLink>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </ClientOnly>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
-<style>
+<style scoped>
 .large-donut {
   --vis-donut-central-label-font-size: 24px;
+  --vis-donut-central-sub-label-font-size: 14px;
+  /* --vis-donut-central-label-text-color: #4bba54; */
+  --vis-donut-central-label-font-weight: bold;
+}
+
+.medium-donut {
+  --vis-donut-central-label-font-size: 18px;
   --vis-donut-central-sub-label-font-size: 14px;
   /* --vis-donut-central-label-text-color: #4bba54; */
   --vis-donut-central-label-font-weight: bold;

@@ -12,7 +12,7 @@ const titleSize = computed(() => {
     case "medium":
       return "md:text-xl text-xl";
     case "small":
-      return "md:text-base text-base border-l-green border-l-2 pl-2";
+      return "md:text-base text-base";
     default:
       return "md:text-2xl text-xl";
   }
@@ -37,7 +37,12 @@ const tag = computed(() => {
 </script>
 
 <template>
-  <div class="inline-flex flex-col gap-1">
+  <div
+    class="inline-flex flex-col gap-1"
+    :class="{
+      'border-l-green border-l-2 pl-2': props.size === 'small',
+    }"
+  >
     <component
       v-if="props.title"
       :is="tag"

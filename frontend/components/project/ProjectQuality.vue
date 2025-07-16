@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { VisSingleContainer, VisDonut } from "@unovis/vue";
 import type {
   MyProjects,
   MyProjectSeoCheckResult,
@@ -30,12 +31,6 @@ import { ArrowUpDown, ChevronDown } from "lucide-vue-next";
 import { valueUpdater } from "@/components/ui/table/utils";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 const props = defineProps<{
   myProject: MyProjects | null;
@@ -67,7 +62,6 @@ const columns: ColumnDef<MyProjectSeoMetaDetail>[] = [
       }),
     enableSorting: false,
     enableHiding: false,
-    size: 50,
   },
   {
     accessorKey: "page_url",
@@ -83,45 +77,12 @@ const columns: ColumnDef<MyProjectSeoMetaDetail>[] = [
       );
     },
     cell: ({ row }) => {
-      const pageUrl = row.getValue("page_url") as string;
-      if (!pageUrl) return h("div", {}, "");
-
       return h(
-        Tooltip,
-        {},
+        "div",
         {
-          default: () => [
-            h(
-              TooltipTrigger,
-              { asChild: true },
-              {
-                default: () =>
-                  h(
-                    "div",
-                    {
-                      class:
-                        "max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap cursor-help",
-                    },
-                    pageUrl,
-                  ),
-              },
-            ),
-            h(
-              TooltipContent,
-              { class: "max-w-[300px]" },
-              {
-                default: () =>
-                  h(
-                    "p",
-                    {
-                      class: "w-full break-words",
-                    },
-                    pageUrl,
-                  ),
-              },
-            ),
-          ],
+          class: "",
         },
+        row.getValue("page_url") as string,
       );
     },
     size: 300,
@@ -140,52 +101,12 @@ const columns: ColumnDef<MyProjectSeoMetaDetail>[] = [
       );
     },
     cell: ({ row }) => {
-      const title = row.getValue("title_text") as string;
-      if (!title)
-        return h(
-          "div",
-          {
-            class: "text-muted-foreground",
-          },
-          "no title",
-        );
-
       return h(
-        Tooltip,
-        {},
+        "div",
         {
-          default: () => [
-            h(
-              TooltipTrigger,
-              { asChild: true },
-              {
-                default: () =>
-                  h(
-                    "div",
-                    {
-                      class:
-                        "max-w-[250px] overflow-hidden text-ellipsis whitespace-nowrap cursor-help",
-                    },
-                    title,
-                  ),
-              },
-            ),
-            h(
-              TooltipContent,
-              { class: "max-w-[300px]" },
-              {
-                default: () =>
-                  h(
-                    "p",
-                    {
-                      class: "w-full break-words",
-                    },
-                    title,
-                  ),
-              },
-            ),
-          ],
+          class: "",
         },
+        row.getValue("title_text") as string,
       );
     },
     size: 250,
@@ -204,52 +125,12 @@ const columns: ColumnDef<MyProjectSeoMetaDetail>[] = [
       );
     },
     cell: ({ row }) => {
-      const description = row.getValue("meta_description_text") as string;
-      if (!description)
-        return h(
-          "div",
-          {
-            class: "text-muted-foreground",
-          },
-          "no description",
-        );
-
       return h(
-        Tooltip,
-        {},
+        "div",
         {
-          default: () => [
-            h(
-              TooltipTrigger,
-              { asChild: true },
-              {
-                default: () =>
-                  h(
-                    "div",
-                    {
-                      class:
-                        "max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap cursor-help",
-                    },
-                    description,
-                  ),
-              },
-            ),
-            h(
-              TooltipContent,
-              { class: "max-w-[300px]" },
-              {
-                default: () =>
-                  h(
-                    "p",
-                    {
-                      class: "w-full break-words",
-                    },
-                    description,
-                  ),
-              },
-            ),
-          ],
+          class: "",
         },
+        row.getValue("meta_description_text") as string,
       );
     },
     size: 200,
@@ -268,52 +149,12 @@ const columns: ColumnDef<MyProjectSeoMetaDetail>[] = [
       );
     },
     cell: ({ row }) => {
-      const canonicalUrl = row.getValue("canonical_url") as string;
-      if (!canonicalUrl)
-        return h(
-          "div",
-          {
-            class: "text-muted-foreground",
-          },
-          "no canonical",
-        );
-
       return h(
-        Tooltip,
-        {},
+        "div",
         {
-          default: () => [
-            h(
-              TooltipTrigger,
-              { asChild: true },
-              {
-                default: () =>
-                  h(
-                    "div",
-                    {
-                      class:
-                        "max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap cursor-help",
-                    },
-                    canonicalUrl,
-                  ),
-              },
-            ),
-            h(
-              TooltipContent,
-              { class: "max-w-[300px]" },
-              {
-                default: () =>
-                  h(
-                    "p",
-                    {
-                      class: "w-full break-words",
-                    },
-                    canonicalUrl,
-                  ),
-              },
-            ),
-          ],
+          class: "",
         },
+        row.getValue("canonical_url") as string,
       );
     },
     size: 150,
@@ -328,7 +169,7 @@ const columns: ColumnDef<MyProjectSeoMetaDetail>[] = [
           onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
           class: "cursor-pointer",
         },
-        () => ["ステータスコード", h(ArrowUpDown, { class: "ml-2 h-4 w-4" })],
+        () => ["ステータス", h(ArrowUpDown, { class: "ml-2 h-4 w-4" })],
       );
     },
     cell: ({ row }) => {
@@ -351,52 +192,12 @@ const columns: ColumnDef<MyProjectSeoMetaDetail>[] = [
       );
     },
     cell: ({ row }) => {
-      const keywords = row.getValue("keywords") as string[] | null;
-      if (!keywords || keywords.length === 0)
-        return h(
-          "div",
-          {
-            class: "text-muted-foreground",
-          },
-          "no keywords",
-        );
-
       return h(
-        Tooltip,
-        {},
+        "div",
         {
-          default: () => [
-            h(
-              TooltipTrigger,
-              { asChild: true },
-              {
-                default: () =>
-                  h(
-                    "div",
-                    {
-                      class:
-                        "max-w-[120px] overflow-hidden text-ellipsis whitespace-nowrap cursor-help",
-                    },
-                    keywords,
-                  ),
-              },
-            ),
-            h(
-              TooltipContent,
-              { class: "max-w-[300px]" },
-              {
-                default: () =>
-                  h(
-                    "p",
-                    {
-                      class: "w-full break-words",
-                    },
-                    keywords,
-                  ),
-              },
-            ),
-          ],
+          class: "",
         },
+        (row.getValue("keywords") as string[])?.join(", ") || "no keywords",
       );
     },
     size: 120,
@@ -427,10 +228,13 @@ const columns: ColumnDef<MyProjectSeoMetaDetail>[] = [
     size: 80,
   },
 ];
-
 const sorting = ref<SortingState>([]);
 const columnFilters = ref<ColumnFiltersState>([]);
-const columnVisibility = ref<VisibilityState>({});
+const columnVisibility = ref<VisibilityState>({
+  canonical_url: false,
+  status_code: false,
+  keywords: false,
+});
 const rowSelection = ref({});
 const expanded = ref<ExpandedState>({});
 const table = useVueTable({
@@ -467,23 +271,230 @@ const table = useVueTable({
     },
   },
 });
+
+/***************************
+ * for seo check result donut
+ ****************************/
+const pieScores = computed(() => {
+  if (!props.myProjectSeoCheckResults) return [0, 0];
+  const score = props.myProjectSeoCheckResults.meta_score || 0;
+  return [score, 100 - score];
+});
+const value = (d: number) => d;
+const color = (d: number, i: number) => {
+  if (!props.myProjectSeoCheckResults) return ["#4bba54", "#d5d8d5"][i];
+  const score = props.myProjectSeoCheckResults.meta_score || 0;
+  if (score >= 80) return ["#4bba54", "#d5d8d5"][i]; // green
+  if (score >= 50) return ["#f0ad4e", "#d5d8d5"][i]; // yellow
+  return ["#d9534f", "#d5d8d5"][i]; // red
+};
+const pieSubLabel = computed(() => {
+  if (!props.myProjectSeoCheckResults) return "全体のスコア";
+  const score = props.myProjectSeoCheckResults.meta_score || 0;
+
+  if (score >= 80) return "素晴らしい！";
+  if (score >= 50) return "注意が必要";
+  return "改善が必要";
+});
+
+/***************************
+ * for accordion items
+ ****************************/
+const noTitleLength = props.myProjectSeoMetaDetails?.filter(
+  (item) => !item.title_text || item.title_text.trim() === "",
+).length;
+const noMetaDescriptionLength = props.myProjectSeoMetaDetails?.filter(
+  (item) =>
+    !item.meta_description_text || item.meta_description_text.trim() === "",
+).length;
+const noCanonicalUrlLength = props.myProjectSeoMetaDetails?.filter(
+  (item) => !item.canonical_url || item.canonical_url.trim() === "",
+).length;
+const noKeywordsLength = props.myProjectSeoMetaDetails?.filter(
+  (item) => !item.keywords || item.keywords.length === 0,
+).length;
+const errorStatusLength = props.myProjectSeoMetaDetails?.filter(
+  (item) => item.status_code !== 200,
+).length;
+const lowPointPagesLength = props.myProjectSeoMetaDetails?.filter(
+  (item) => item.score < 60,
+).length;
+
+const leftAccordionItems = [
+  {
+    value: "title",
+    title: "ページタイトル",
+    content: noTitleLength
+      ? `${noTitleLength}件のページでページタイトルが設定されていません。`
+      : "すべてのページでページタイトルが設定されています。",
+    icon: noTitleLength && noTitleLength > 0 ? "mdi:alert" : "mdi:check",
+    color: noTitleLength && noTitleLength > 0 ? "text-warning" : "text-green",
+  },
+  {
+    value: "meta-description",
+    title: "メタディスクリプション",
+    content: noMetaDescriptionLength
+      ? `${noMetaDescriptionLength}件のページでメタディスクリプションが設定されていません。`
+      : "すべてのページでメタディスクリプションが設定されています。",
+    icon:
+      noMetaDescriptionLength && noMetaDescriptionLength > 0
+        ? "mdi:alert"
+        : "mdi:check",
+    color:
+      noMetaDescriptionLength && noMetaDescriptionLength > 0
+        ? "text-warning"
+        : "text-green",
+  },
+  {
+    value: "canonical-url",
+    title: "Canonical URL",
+    content: noCanonicalUrlLength
+      ? `${noCanonicalUrlLength}件のページでCanonical URLが設定されていません。`
+      : "すべてのページでCanonical URLが設定されています。",
+    icon:
+      noCanonicalUrlLength && noCanonicalUrlLength > 0
+        ? "mdi:alert"
+        : "mdi:check",
+    color:
+      noCanonicalUrlLength && noCanonicalUrlLength > 0
+        ? "text-warning"
+        : "text-green",
+  },
+];
+
+const rightAccordionItems = [
+  {
+    value: "error-status",
+    title: "HTTPエラー",
+    content: errorStatusLength
+      ? `${errorStatusLength}件のページでHTTPエラーが発生しています。`
+      : "すべてのページでHTTPステータスは200です。",
+    icon:
+      errorStatusLength && errorStatusLength > 0 ? "mdi:alert" : "mdi:check",
+    color:
+      errorStatusLength && errorStatusLength > 0
+        ? "text-warning"
+        : "text-green",
+  },
+  {
+    value: "keywords",
+    title: "キーワード",
+    content: noKeywordsLength
+      ? `${noKeywordsLength}件のページでキーワードが設定されていません。`
+      : "すべてのページでキーワードが設定されています。",
+    icon: noKeywordsLength && noKeywordsLength > 0 ? "mdi:alert" : "mdi:check",
+    color:
+      noKeywordsLength && noKeywordsLength > 0 ? "text-warning" : "text-green",
+  },
+  {
+    value: "low-score",
+    title: "スコアが低いページ",
+    content: lowPointPagesLength
+      ? `${lowPointPagesLength}件のページでスコアが60点未満です。`
+      : "すべてのページでスコアは60点以上です。",
+    icon:
+      lowPointPagesLength && lowPointPagesLength > 0
+        ? "mdi:alert"
+        : "mdi:check",
+    color:
+      lowPointPagesLength && lowPointPagesLength > 0
+        ? "text-warning"
+        : "text-green",
+  },
+];
 </script>
 
 <template>
-  <TooltipProvider>
-    <div class="flex w-full flex-col gap-2">
-      <div class="w-full">
-        <div class="flex items-center py-4">
-          <Input
-            class="max-w-sm"
-            placeholder="ページタイトルでフィルタリング"
-            :model-value="
-              table.getColumn('title_text')?.getFilterValue() as string
-            "
-            @update:model-value="
-              table.getColumn('title_text')?.setFilterValue($event)
-            "
-          />
+  <div class="flex w-full flex-col gap-12">
+    <div class="flex flex-col gap-4">
+      <PageTitle
+        title="チェック結果"
+        description="サイトのSEOメタ情報を確認できます。"
+        size="small"
+      />
+
+      <div class="flex items-center gap-12">
+        <ClientOnly>
+          <VisSingleContainer
+            :data="pieScores"
+            class="medium-donut !h-56 !w-56"
+          >
+            <VisDonut
+              :value="value"
+              :cornerRadius="5"
+              :color="color"
+              :arcWidth="12"
+              :radius="95"
+              :centralLabel="`${props.myProjectSeoCheckResults?.total_score || 0}点`"
+              :centralSubLabel="pieSubLabel"
+            />
+          </VisSingleContainer>
+        </ClientOnly>
+
+        <div class="flex w-full items-center gap-8">
+          <Accordion type="single" class="w-full" collapsible>
+            <AccordionItem
+              v-for="item in leftAccordionItems"
+              :key="item.value"
+              :value="item.value"
+            >
+              <AccordionTrigger class="cursor-pointer">
+                <div class="flex items-center gap-2 text-base font-semibold">
+                  <Icon :name="item.icon" class="!size-4" :class="item.color" />
+                  {{ item.title }}
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                {{ item.content }}
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+          <Accordion type="single" class="w-full" collapsible>
+            <AccordionItem
+              v-for="item in rightAccordionItems"
+              :key="item.value"
+              :value="item.value"
+            >
+              <AccordionTrigger class="cursor-pointer">
+                <div class="flex items-center gap-2 text-base font-semibold">
+                  <Icon :name="item.icon" class="!size-4" :class="item.color" />
+                  {{ item.title }}
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                {{ item.content }}
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-4">
+      <div class="flex items-center justify-between">
+        <PageTitle
+          title="ページごとのSEOメタ情報"
+          description="サイト内の各ページのSEOメタ情報を確認できます。"
+          size="small"
+        />
+        <!-- filter and search -->
+        <div class="flex items-center gap-2">
+          <div class="relative flex items-center gap-2">
+            <Icon
+              name="solar:magnifer-linear"
+              class="text-muted-foreground absolute top-[50%] left-2 !size-4 -translate-y-1/2"
+            />
+            <Input
+              class="w-64 pl-8"
+              placeholder="ページタイトルで検索"
+              :model-value="
+                table.getColumn('title_text')?.getFilterValue() as string
+              "
+              @update:model-value="
+                table.getColumn('title_text')?.setFilterValue($event)
+              "
+            />
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger as-child>
               <Button variant="outline" class="ml-auto">
@@ -509,7 +520,9 @@ const table = useVueTable({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+      </div>
 
+      <div class="w-full">
         <!-- table -->
         <div class="rounded-md border">
           <Table class="w-full">
@@ -561,6 +574,7 @@ const table = useVueTable({
           </Table>
         </div>
 
+        <!-- pagination -->
         <div class="flex items-center justify-end space-x-2 py-4">
           <div class="text-muted-foreground flex-1 text-sm">
             {{ table.getFilteredSelectedRowModel().rows.length }} /
@@ -617,5 +631,38 @@ const table = useVueTable({
         </div>
       </div>
     </div>
-  </TooltipProvider>
+  </div>
 </template>
+
+<style scoped>
+.large-donut {
+  --vis-donut-central-label-font-size: 24px;
+  --vis-donut-central-sub-label-font-size: 14px;
+  /* --vis-donut-central-label-text-color: #4bba54; */
+  --vis-donut-central-label-font-weight: bold;
+}
+
+.medium-donut {
+  --vis-donut-central-label-font-size: 20px;
+  --vis-donut-central-sub-label-font-size: 12px;
+  /* --vis-donut-central-label-text-color: #4bba54; */
+  --vis-donut-central-label-font-weight: bold;
+  position: relative;
+}
+
+.medium-donut :deep(text:nth-of-type(2)) {
+  dominant-baseline: hanging;
+  text-anchor: middle;
+}
+
+.small-donut {
+  --vis-donut-central-label-font-size: 14px;
+  /* --vis-donut-central-label-text-color: #4bba54; */
+  --vis-donut-central-label-font-weight: bold;
+}
+
+.dark .large-donut,
+.dark .small-donut {
+  --vis-donut-central-label-text-color: #fff;
+}
+</style>

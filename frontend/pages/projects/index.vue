@@ -175,7 +175,7 @@ onBeforeUnmount(() => {
         <CardHeader class="gap-1 px-4">
           <CardTitle class="flex items-center justify-between">
             <NuxtLink
-              :to="`/projects/${site.id}/details`"
+              :to="`/projects/${site.id}/details?tab=overview`"
               class="w-full hover:underline hover:opacity-80"
             >
               {{ site.name }}
