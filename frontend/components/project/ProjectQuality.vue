@@ -252,7 +252,9 @@ const columnVisibility = ref<VisibilityState>({
 const rowSelection = ref({});
 const expanded = ref<ExpandedState>({});
 const table = useVueTable({
-  data: props.myProjectSeoMetaDetails || [],
+  get data() {
+    return props.myProjectSeoMetaDetails || [];
+  },
   columns,
   getCoreRowModel: getCoreRowModel(),
   getPaginationRowModel: getPaginationRowModel(),
@@ -625,7 +627,7 @@ function selectDialogContent(id: string) {
                     <NuxtImg
                       v-if="item.content?.twitter_cards"
                       :src="item.content.twitter_cards.twitter_image"
-                      class="w-full rounded-xl object-cover"
+                      class="h-[370px] w-full rounded-xl object-cover"
                       alt="OGP Image"
                     />
 
@@ -646,7 +648,7 @@ function selectDialogContent(id: string) {
                     <NuxtImg
                       v-if="item.content?.og_tags"
                       :src="item.content.og_tags.og_image"
-                      class="w-full rounded-t-xl object-cover"
+                      class="h-[370px] w-full rounded-t-xl object-cover"
                       alt="OGP Image"
                     />
                   </CardHeader>
@@ -746,7 +748,7 @@ function selectDialogContent(id: string) {
             <SelectContent>
               <SelectGroup>
                 <SelectItem
-                  v-for="size in [10, 20, 30, 40, 50]"
+                  v-for="size in [10, 20, 30, 40, 50, 100]"
                   :key="size"
                   :value="size"
                 >

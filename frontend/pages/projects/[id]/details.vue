@@ -161,25 +161,68 @@ async function fetchSeoCheckResults(
   }
 }
 
+// TODO: 全件取得ではなく、ページネーションを実装する
 async function fetchSeoMetaDetails(
   id: string,
 ): Promise<MyProjectSeoMetaDetail[] | null> {
   try {
-    const { data, error } = await supabase
-      .from("seo_meta_details")
-      .select("*")
-      .eq("seo_check_results_id", id)
-      .order("created_at", { ascending: false });
+    const allData: MyProjectSeoMetaDetail[] = [];
+    const pageSize = 1000; // Supabaseの上限
+    let page = 0;
+    let hasMore = true;
 
-    if (error) throw error;
+    while (hasMore) {
+      const start = page * pageSize;
+      const end = start + pageSize - 1;
 
-    return data && data.length > 0 ? (data as MyProjectSeoMetaDetail[]) : null;
+      const { data, error } = await supabase
+        .from("seo_meta_details")
+        .select("*")
+        .eq("seo_check_results_id", id)
+        .order("created_at", { ascending: false })
+        .range(start, end);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        allData.push(...(data as MyProjectSeoMetaDetail[]));
+
+        // 取得件数がpageSizeより少ない場合は最後のページ
+        hasMore = data.length === pageSize;
+        page++;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    return allData.length > 0 ? allData : null;
   } catch (error) {
     console.error("Error fetching SEO results:", error);
     toast.error("SEO結果の取得に失敗しました");
     return null;
   }
 }
+
+const refreshScore = async () => {
+  if (myProject.value?.crawl_results?.[0].status === "in_progress") {
+    toast.warning("サイトチェックが終了するまでお待ちください。");
+    return;
+  }
+
+  await refresh();
+
+  if (myProjectSeoCheckResults.value) {
+    myProjectSeoMetaDetails.value = await fetchSeoMetaDetails(
+      myProjectSeoCheckResults.value.id,
+    );
+  }
+
+  if (myProjectSeoCheckResults.value?.total_score) {
+    toast.success("SEOスコアを更新しました");
+  } else {
+    toast.warning("SEOチェックがまだ完了していません。");
+  }
+};
 
 /************************
  * Lifecycle Hooks
@@ -235,23 +278,6 @@ watch(
   },
   { immediate: true },
 );
-
-const refreshScore = async () => {
-  if (myProject.value?.crawl_results?.[0].status === "in_progress") {
-    toast.warning("サイトチェックが終了するまでお待ちください。");
-    return;
-  }
-
-  await refresh();
-
-  if (myProjectSeoCheckResults.value) {
-    myProjectSeoMetaDetails.value = await fetchSeoMetaDetails(
-      myProjectSeoCheckResults.value.id,
-    );
-  }
-
-  toast.success("SEOスコアを更新しました");
-};
 
 onMounted(async () => {
   if (!user.value) {
