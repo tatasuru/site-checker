@@ -69,6 +69,12 @@ const columns: ColumnDef<MyProjectSeoMetaDetail>[] = [
     enableHiding: false,
   },
   {
+    accessorKey: "id",
+    header: "ID",
+    cell: ({ row }) => row.getValue("id"),
+    enableHiding: true, // 非表示にできるようにする
+  },
+  {
     accessorKey: "page_url",
     header: ({ column }) => {
       return h(
@@ -83,9 +89,11 @@ const columns: ColumnDef<MyProjectSeoMetaDetail>[] = [
     },
     cell: ({ row }) => {
       return h(
-        "div",
+        Button,
         {
-          class: "",
+          variant: "link",
+          onClick: () => selectDialogContent(row.getValue("id") as string),
+          class: "text-link hover:underline",
         },
         row.getValue("page_url") as string,
       );
@@ -236,6 +244,7 @@ const columns: ColumnDef<MyProjectSeoMetaDetail>[] = [
 const sorting = ref<SortingState>([]);
 const columnFilters = ref<ColumnFiltersState>([]);
 const columnVisibility = ref<VisibilityState>({
+  id: false,
   canonical_url: false,
   status_code: false,
   keywords: false,
@@ -407,6 +416,47 @@ const rightAccordionItems = [
         : "text-green",
   },
 ];
+
+/***************************
+ * for dialog
+ ****************************/
+const isDialogOpen = ref<boolean>(false);
+const dialogContents = ref<
+  {
+    title: string;
+    content: MyProjectSeoMetaDetail | undefined;
+    icon: string;
+    color: string;
+    pageUrl: string;
+  }[]
+>();
+
+function selectDialogContent(id: string) {
+  const selectedContent = props.myProjectSeoMetaDetails?.find(
+    (item) => item.id === id,
+  );
+
+  isDialogOpen.value = true;
+
+  console.log("Selected content:", selectedContent);
+
+  dialogContents.value = [
+    {
+      title: "Twitter OGP",
+      content: selectedContent,
+      icon: "mdi:twitter",
+      color: "text-green",
+      pageUrl: selectedContent?.page_url || "",
+    },
+    {
+      title: "Facebook OGP",
+      content: selectedContent,
+      icon: "mdi:facebook",
+      color: "text-green",
+      pageUrl: selectedContent?.page_url || "",
+    },
+  ];
+}
 </script>
 
 <template>
@@ -535,6 +585,89 @@ const rightAccordionItems = [
           </DropdownMenu>
         </div>
       </div>
+
+      <Dialog
+        v-model:open="isDialogOpen"
+        :defaultOpen="false"
+        :onOpenChange="(open: boolean) => (isDialogOpen = open)"
+        class="w-full"
+      >
+        <DialogContent class="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle>OGP確認</DialogTitle>
+            <DialogDescription>
+              SNSシェア時のOGP画像・タイトル・説明文のサイズ・見え方を確認できます。
+            </DialogDescription>
+          </DialogHeader>
+          <Accordion
+            default-value="Twitter OGP"
+            type="single"
+            class="w-full"
+            collapsible
+          >
+            <AccordionItem
+              v-for="item in dialogContents"
+              :key="item.title"
+              :value="item.title"
+            >
+              <AccordionTrigger class="cursor-pointer">
+                <div class="flex items-center gap-2 text-base font-semibold">
+                  <Icon :name="item.icon" class="!size-6" :class="item.color" />
+                  {{ item.title }}
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <Card v-if="item.title === 'Twitter OGP'" class="gap-0 p-0">
+                  <CardHeader
+                    class="relative flex flex-col gap-0 rounded-xl px-0"
+                  >
+                    <NuxtImg
+                      v-if="item.content?.twitter_cards"
+                      :src="item.content.twitter_cards.twitter_image"
+                      class="w-full rounded-xl object-cover"
+                      alt="OGP Image"
+                    />
+
+                    <Badge
+                      class="bg-primary/50 absolute bottom-4 left-4 rounded-xs text-white"
+                    >
+                      {{ item.pageUrl }}
+                    </Badge>
+                  </CardHeader>
+                </Card>
+                <Card
+                  v-else-if="item.title === 'Facebook OGP'"
+                  class="gap-0 p-0"
+                >
+                  <CardHeader
+                    class="relative flex flex-col gap-0 rounded-xl px-0"
+                  >
+                    <NuxtImg
+                      v-if="item.content?.og_tags"
+                      :src="item.content.og_tags.og_image"
+                      class="w-full rounded-xl object-cover"
+                      alt="OGP Image"
+                    />
+                  </CardHeader>
+                  <CardFooter class="flex flex-col items-start gap-1 py-4">
+                    <p class="text-base font-semibold">
+                      {{ item.content?.og_tags.og_title }}
+                    </p>
+                    <p class="text-muted-foreground text-sm">
+                      {{ item.content?.og_tags.og_description }}
+                    </p>
+                  </CardFooter>
+                </Card>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+          <DialogFooter>
+            <DialogClose as-child>
+              <Button type="button" variant="secondary"> 閉じる </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div class="w-full">
         <!-- table -->

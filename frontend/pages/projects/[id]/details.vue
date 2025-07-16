@@ -335,7 +335,9 @@ function handleTabChange(value: "overview" | "quality" | "settings") {
   window.scrollTo({ top: 0, behavior: "smooth" });
   // update URL query parameter
   const query = { ...route.query, tab: value };
-  router.push({ path: route.path, query });
+  // router.push({ path: route.path, query });
+  // do not use push, use replace to avoid adding history entry
+  router.replace({ path: route.path, query });
 }
 </script>
 
