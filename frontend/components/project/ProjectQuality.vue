@@ -31,6 +31,41 @@ import { ArrowUpDown, ChevronDown } from "lucide-vue-next";
 import { valueUpdater } from "@/components/ui/table/utils";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { h, ref, computed } from "vue";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion";
+import { Card, CardHeader, CardFooter } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 const props = defineProps<{
   myProject: MyProjects | null;
@@ -117,9 +152,12 @@ const columns: ColumnDef<MyProjectSeoMetaDetail>[] = [
       return h(
         "div",
         {
-          class: "",
+          class: row.getValue("title_text")
+            ? "text-ellipsis overflow-hidden whitespace-nowrap"
+            : "text-muted-foreground",
         },
-        row.getValue("title_text") as string,
+
+        (row.getValue("title_text") as string) || "no title",
       );
     },
     size: 250,
@@ -141,9 +179,11 @@ const columns: ColumnDef<MyProjectSeoMetaDetail>[] = [
       return h(
         "div",
         {
-          class: "",
+          class: row.getValue("meta_description_text")
+            ? "text-ellipsis overflow-hidden whitespace-nowrap"
+            : "text-muted-foreground",
         },
-        row.getValue("meta_description_text") as string,
+        (row.getValue("meta_description_text") as string) || "no description",
       );
     },
     size: 200,
@@ -165,9 +205,11 @@ const columns: ColumnDef<MyProjectSeoMetaDetail>[] = [
       return h(
         "div",
         {
-          class: "",
+          class: row.getValue("canonical_url")
+            ? "text-ellipsis overflow-hidden whitespace-nowrap"
+            : "text-muted-foreground",
         },
-        row.getValue("canonical_url") as string,
+        (row.getValue("canonical_url") as string) || "no canonical URL",
       );
     },
     size: 150,
@@ -438,6 +480,8 @@ function selectDialogContent(id: string) {
     (item) => item.id === id,
   );
 
+  console.log("Selected Content:", selectedContent);
+
   isDialogOpen.value = true;
 
   dialogContents.value = [
@@ -626,7 +670,10 @@ function selectDialogContent(id: string) {
                   >
                     <NuxtImg
                       v-if="item.content?.twitter_cards"
-                      :src="item.content.twitter_cards.twitter_image"
+                      :src="
+                        item.content.twitter_cards.twitter_image ||
+                        item.content.og_tags.og_image
+                      "
                       class="h-[370px] w-full rounded-xl object-cover"
                       alt="OGP Image"
                     />
@@ -647,7 +694,10 @@ function selectDialogContent(id: string) {
                   >
                     <NuxtImg
                       v-if="item.content?.og_tags"
-                      :src="item.content.og_tags.og_image"
+                      :src="
+                        item.content.og_tags.og_image ||
+                        item.content.twitter_cards.twitter_image
+                      "
                       class="h-[370px] w-full rounded-t-xl object-cover"
                       alt="OGP Image"
                     />

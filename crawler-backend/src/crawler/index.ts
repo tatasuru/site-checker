@@ -76,6 +76,8 @@ export async function executeCrawler(
     persistStorage: true, // データは保存
   });
 
+  // TODO: ここのsessionPoolOptionsは50くらいいけるはずだけど、、、、
+  // cheerioに切り替えてもいいかも。
   const crawler = new PlaywrightCrawler(
     {
       requestHandler: router,
