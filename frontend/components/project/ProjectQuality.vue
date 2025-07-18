@@ -669,7 +669,10 @@ function selectDialogContent(id: string) {
                     class="relative flex flex-col gap-0 rounded-xl px-0"
                   >
                     <NuxtImg
-                      v-if="item.content?.twitter_cards"
+                      v-if="
+                        item.content?.twitter_cards.twitter_image ||
+                        item.content?.og_tags.og_image
+                      "
                       :src="
                         item.content.twitter_cards.twitter_image ||
                         item.content.og_tags.og_image
@@ -677,8 +680,16 @@ function selectDialogContent(id: string) {
                       class="h-[370px] w-full rounded-xl object-cover"
                       alt="OGP Image"
                     />
-
+                    <div
+                      v-else
+                      class="flex h-[370px] w-full items-center justify-center rounded-t-xl bg-gray-200"
+                    >
+                      <p class="text-muted-foreground">
+                        OGP画像が設定されていません。
+                      </p>
+                    </div>
                     <Badge
+                      v-if="item.pageUrl"
                       class="bg-primary/50 absolute bottom-4 left-4 rounded-xs text-white"
                     >
                       {{ item.pageUrl }}
@@ -693,7 +704,10 @@ function selectDialogContent(id: string) {
                     class="relative flex flex-col gap-0 rounded-t-xl px-0"
                   >
                     <NuxtImg
-                      v-if="item.content?.og_tags"
+                      v-if="
+                        item.content?.og_tags.og_image ||
+                        item.content?.twitter_cards.twitter_image
+                      "
                       :src="
                         item.content.og_tags.og_image ||
                         item.content.twitter_cards.twitter_image
@@ -701,13 +715,33 @@ function selectDialogContent(id: string) {
                       class="h-[370px] w-full rounded-t-xl object-cover"
                       alt="OGP Image"
                     />
+                    <div
+                      v-else
+                      class="flex h-[370px] w-full items-center justify-center rounded-t-xl bg-gray-200"
+                    >
+                      <p class="text-muted-foreground">
+                        OGP画像が設定されていません。
+                      </p>
+                    </div>
                   </CardHeader>
                   <CardFooter class="flex flex-col items-start gap-1 py-4">
-                    <p class="text-base font-semibold">
+                    <p
+                      v-if="item.content?.og_tags.og_title"
+                      class="text-base font-semibold"
+                    >
                       {{ item.content?.og_tags.og_title }}
                     </p>
-                    <p class="text-muted-foreground text-sm">
+                    <p v-else class="text-muted-foreground text-base">
+                      タイトルが設定されていません。
+                    </p>
+                    <p
+                      v-if="item.content?.og_tags.og_description"
+                      class="text-muted-foreground text-sm"
+                    >
                       {{ item.content?.og_tags.og_description }}
+                    </p>
+                    <p v-else class="text-muted-foreground text-sm">
+                      説明文が設定されていません。
                     </p>
                   </CardFooter>
                 </Card>
