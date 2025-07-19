@@ -4,7 +4,7 @@ import type { Node, Edge } from "@vue-flow/core";
 import { VueFlow, Panel, useVueFlow } from "@vue-flow/core";
 import { MiniMap } from "@vue-flow/minimap";
 import { Background } from "@vue-flow/background";
-import type { CrawlResult } from "@/types/project";
+import type { CrawlResult, MyProjects } from "@/types/project";
 import { toast } from "vue-sonner";
 
 definePageMeta({
@@ -16,24 +16,40 @@ const nodes = ref<Node[]>([]);
 const edges = ref<Edge[]>([]);
 const route = useRoute();
 const supabase = useSupabaseClient();
+const myProject = ref<MyProjects | null>(null);
 const myProjectCrawlResults = ref<CrawlResult | null>(null);
+const { setCenter } = useVueFlow();
+const isLoading = ref<boolean>(true);
 
 /**********************************
  * project helper functions
  **********************************/
-async function fetchProjectDetails(id: string): Promise<CrawlResult | null> {
+async function fetchProjectDetails(id: string): Promise<MyProjects | null> {
   try {
     const { data, error } = await supabase
-      .from("crawl_results")
-      .select("*")
-      .eq("project_id", id)
-      .eq("is_latest", true) // 最新のcrawl_resultsのみ
-      .order("completed_at", { ascending: false })
+      .from("projects")
+      .select(
+        `*,
+      crawl_results (
+        id,
+        site_url,
+        status,
+        total_pages,
+        successful_pages,
+        failed_pages,
+        started_at,
+        completed_at,
+        sitemap_data
+      )`,
+      )
+      .eq("id", id)
+      .eq("crawl_results.is_latest", true) // 最新のcrawl_resultsのみ
+      .order("updated_at", { ascending: false })
       .limit(1);
 
     if (error) throw error;
 
-    return data && data.length > 0 ? (data[0] as CrawlResult) : null;
+    return data && data.length > 0 ? (data[0] as MyProjects) : null;
   } catch (error) {
     console.error("Error fetching project overview:", error);
     toast.error("プロジェクト情報の取得に失敗しました");
@@ -42,73 +58,104 @@ async function fetchProjectDetails(id: string): Promise<CrawlResult | null> {
 }
 
 onMounted(async () => {
-  // 1. fetch ProjectDetails
+  // 1. fetch ProjectCrawlResults
   const projectId = route.params.id as string;
 
   try {
-    myProjectCrawlResults.value = await fetchProjectDetails(projectId);
+    myProject.value = await fetchProjectDetails(projectId);
+    console.log("myProject.value", myProject.value);
+
+    if (!myProject.value) {
+      toast.error("プロジェクトが見つかりません");
+      return;
+    }
+
+    myProjectCrawlResults.value = myProject.value.crawl_results?.[0] || null;
 
     if (myProjectCrawlResults.value) {
-      // json 形式のsitemap_dataをパース
+      // 1.json 形式のsitemap_dataをパース
       let parseSitemapData = null;
-
       parseSitemapData = JSON.parse(
         myProjectCrawlResults.value.sitemap_data || "{}",
       );
 
-      // Initialize nodes and edges based on the crawl results
+      // 2. VueFlowのノードとエッジを設定
       nodes.value = parseSitemapData.nodes;
       edges.value = parseSitemapData.edges;
-      console.log("nodes", nodes.value);
-      console.log("edges", edges.value);
+
+      // 3. VueFlowの初期化
+      setCenter(
+        parseSitemapData.nodes[0].position.x + 125 || 0,
+        parseSitemapData.nodes[0].position.y + 225 || 0,
+        {
+          zoom: parseSitemapData.zoom || 1,
+          duration: 1000,
+        },
+      );
     }
+
+    isLoading.value = false;
   } catch (error) {
     console.error("Error fetching project details:", error);
     toast.error("プロジェクトの詳細情報の取得に失敗しました");
+    isLoading.value = false;
     return;
   }
 });
-
-const {
-  fitView,
-  setCenter,
-  onPaneReady,
-  onInit,
-  onNodeDragStop,
-  onConnect,
-  addEdges,
-  setViewport,
-  toObject,
-  onNodesChange,
-  findEdge,
-  updateEdge,
-} = useVueFlow();
 </script>
 
 <template>
-  <ClientOnly>
-    <VueFlow
-      :nodes="nodes"
-      :edges="edges"
-      class="border-border rounded-lg border-1 border-dashed"
-    >
-      <template #node-custom="customNodeProps">
-        <VueFlowNode
-          :id="customNodeProps.id"
-          :data="customNodeProps.data"
-          :position="customNodeProps.position"
-        />
-      </template>
+  <div class="flex h-full w-full flex-col gap-4">
+    <Button as-child variant="link" class="px-0">
+      <NuxtLink
+        :to="`/projects/${route.params.id}/details`"
+        class="flex w-fit items-center gap-2"
+      >
+        <Icon name="mdi-arrow-left" />
+        プロジェクト詳細へ戻る
+      </NuxtLink>
+    </Button>
 
-      <template #edge-custom="customEdgeProps">
-        <VueFlowEdge v-bind="customEdgeProps" />
-      </template>
+    <ClientOnly>
+      <VueFlow
+        :nodes="nodes"
+        :edges="edges"
+        class="border-border rounded-lg border-1 border-dashed"
+      >
+        <template #node-custom="customNodeProps">
+          <VueFlowNode
+            :id="customNodeProps.id"
+            :data="customNodeProps.data"
+            :position="customNodeProps.position"
+          />
+        </template>
 
-      <Background pattern-color="#aaa" :gap="16" />
-      <Panel position="top-left"> </Panel>
-      <MiniMap />
-    </VueFlow>
-  </ClientOnly>
+        <template #edge-custom="customEdgeProps">
+          <VueFlowEdge v-bind="customEdgeProps" />
+        </template>
+
+        <Background pattern-color="#aaa" :gap="16" />
+        <Panel
+          position="top-left"
+          class="rounded-md bg-gradient-to-tr from-gray-100/50 to-gray-200/50 px-6 py-4 dark:from-gray-900/50 dark:to-transparent"
+        >
+          <div v-if="isLoading" class="flex flex-col gap-2">
+            <Skeleton class="h-6 w-64" />
+            <Skeleton class="h-3 w-48" />
+          </div>
+          <PageTitle
+            v-else
+            :title="myProject?.name || 'プロジェクトが見つかりません'"
+            :description="
+              myProject?.description || 'プロジェクトの説明がありません'
+            "
+            size="small"
+          />
+        </Panel>
+        <MiniMap />
+      </VueFlow>
+    </ClientOnly>
+  </div>
 </template>
 
 <style>
