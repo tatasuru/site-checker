@@ -121,6 +121,7 @@ async function fetchProjectDetails(id: string): Promise<MyProjects | null> {
         successful_pages,
         failed_pages,
         started_at,
+        sitemap_data,
         completed_at
       )`,
       )
@@ -398,10 +399,20 @@ function handleTabChange(value: "overview" | "quality" | "settings") {
         />
 
         <!-- ボタンも条件付きで表示 -->
-        <Button v-if="!isLoading && myProject" as-child variant="main">
+        <Button
+          v-if="!isLoading && myProject"
+          as-child
+          variant="main"
+          :disabled="!myProject.crawl_results?.[0].sitemap_data"
+        >
           <NuxtLink
             :to="`/projects/${route.params.id}/sitemap`"
             class="flex w-fit items-center gap-2"
+            :class="
+              !myProject.crawl_results?.[0].sitemap_data
+                ? 'pointer-events-none cursor-not-allowed opacity-50'
+                : ''
+            "
           >
             サイトマップを見る
             <Icon name="mdi-arrow-right" />
