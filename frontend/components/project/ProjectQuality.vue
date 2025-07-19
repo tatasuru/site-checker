@@ -539,7 +539,10 @@ function selectDialogContent(id: string) {
           </VisSingleContainer>
         </ClientOnly>
 
-        <div class="flex w-full items-center gap-8">
+        <div
+          v-if="props.myProjectSeoCheckResults?.checked_at"
+          class="flex w-full items-center gap-8"
+        >
           <Accordion type="single" class="w-full" collapsible>
             <AccordionItem
               v-for="item in leftAccordionItems"
@@ -574,6 +577,16 @@ function selectDialogContent(id: string) {
               </AccordionContent>
             </AccordionItem>
           </Accordion>
+        </div>
+
+        <div
+          v-else
+          class="flex h-56 w-full flex-1 items-center justify-center rounded-md border border-dashed p-8"
+        >
+          <p class="text-muted-foreground text-center text-sm leading-6">
+            チェック結果がまだありません。<br />
+            サイトのSEOメタ情報を確認するには、情報を更新してください。
+          </p>
         </div>
       </div>
     </div>
