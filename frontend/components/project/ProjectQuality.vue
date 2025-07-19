@@ -618,7 +618,7 @@ function selectDialogContent(id: string) {
                 class="capitalize"
                 :model-value="column.getIsVisible()"
                 @update:model-value="
-                  (value) => {
+                  (value: any) => {
                     column.toggleVisibility(!!value);
                   }
                 "
@@ -640,7 +640,7 @@ function selectDialogContent(id: string) {
           <DialogHeader>
             <DialogTitle>OGP確認</DialogTitle>
             <DialogDescription>
-              <span class="text-link">
+              <span class="text-link break-all">
                 {{ dialogContents?.[0]?.pageUrl || "" }}
               </span>
               のSNSシェア時のOGP画像・タイトル・説明文のサイズ・見え方を確認できます。
@@ -818,7 +818,7 @@ function selectDialogContent(id: string) {
           <Select
             :model-value="table.getState().pagination.pageSize"
             @update:model-value="
-              (val) => {
+              (val: null) => {
                 if (val !== null) table.setPageSize(Number(val));
               }
             "
