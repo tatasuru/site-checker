@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import type { Node, Edge } from "@vue-flow/core";
-import { VueFlow, Panel } from "@vue-flow/core";
+import { VueFlow, Panel, useVueFlow } from "@vue-flow/core";
 import { MiniMap } from "@vue-flow/minimap";
 import { Background } from "@vue-flow/background";
 import type { CrawlResult } from "@/types/project";
@@ -68,11 +68,30 @@ onMounted(async () => {
     return;
   }
 });
+
+const {
+  fitView,
+  setCenter,
+  onPaneReady,
+  onInit,
+  onNodeDragStop,
+  onConnect,
+  addEdges,
+  setViewport,
+  toObject,
+  onNodesChange,
+  findEdge,
+  updateEdge,
+} = useVueFlow();
 </script>
 
 <template>
   <ClientOnly>
-    <VueFlow :nodes="nodes" :edges="edges">
+    <VueFlow
+      :nodes="nodes"
+      :edges="edges"
+      class="border-border rounded-lg border-1 border-dashed"
+    >
       <template #node-custom="customNodeProps">
         <VueFlowNode
           :id="customNodeProps.id"

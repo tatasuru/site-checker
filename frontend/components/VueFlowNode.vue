@@ -26,7 +26,7 @@ const props = defineProps({
       <NuxtLink
         :to="props.data.url"
         target="_blank"
-        class="text-link text-xs hover:underline"
+        class="text-link text-xs break-words hover:underline"
       >
         {{ props.data.url }}
       </NuxtLink>

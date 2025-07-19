@@ -159,10 +159,15 @@ export async function mergeDatasetFiles() {
       return [];
     }
 
+    // 全てのデータをdepth順でソート
+    const sortedAllDataByDepth = allData.items.sort(
+      (a, b) => (a.depth || 0) - (b.depth || 0)
+    );
+
     // 統合データを保存
     await fs.writeFile(
       "./storage/merged-crawl-data.json",
-      JSON.stringify(allData.items, null, 2)
+      JSON.stringify(sortedAllDataByDepth, null, 2)
     );
 
     return allData.items;
@@ -190,14 +195,19 @@ async function manualMerge() {
       allData.push(data);
     }
 
+    // 全てのデータをdepth順でソート
+    const sortedAllDataByDepth = allData.sort(
+      (a, b) => (a.depth || 0) - (b.depth || 0)
+    );
+
     console.log(
-      `Merged ${jsonFiles.length} files with ${allData.length} total items`
+      `Merged ${jsonFiles.length} files with ${sortedAllDataByDepth.length} total items`
     );
 
     // 統合データを保存
     await fs.writeFile(
       "./storage/merged-crawl-data.json",
-      JSON.stringify(allData, null, 2)
+      JSON.stringify(sortedAllDataByDepth, null, 2)
     );
 
     return allData;
@@ -258,23 +268,32 @@ export async function generateVueFlowData(allData: any) {
     } duplicates)`
   );
 
-  // ノード作成
+  // 各深さでのインデックスを管理するMapを用意
+  const depthIndexMap = new Map<number, number>();
+
+  // まず全ノードを作成（位置調整前）
   uniqueData.forEach(
     (item: { depth: number; title: string; url: string }, index: number) => {
       const nodeId = `node-${index}`;
+      const currentDepth = item.depth || 0;
 
+      // その深さでのインデックスを取得・更新
+      const depthIndex = depthIndexMap.get(currentDepth) || 0;
+      depthIndexMap.set(currentDepth, depthIndex + 1);
+
+      // nodeを作成（仮の位置で）
       const node: VueFlowNode = {
         id: nodeId,
         type: "custom",
         position: {
-          x: index * 350,
-          y: (item.depth || 0) * 300,
+          x: depthIndex * 350, // 同じ深さ内での横方向位置
+          y: currentDepth * 300, // 深さによる縦方向位置
         },
         data: {
           label: item.title || "No Title",
           url: item.url,
           title: item.title,
-          depth: item.depth || 0,
+          depth: currentDepth,
         },
       };
 
@@ -298,26 +317,25 @@ export async function generateVueFlowData(allData: any) {
     }
   });
 
-  // 一番最初の親nodeのpositionを調整
-  if (nodes.length > 0) {
-    const firstNode = nodes[0];
+  // 位置調整：深さごとに親ノードの中央に配置
+  const maxDepth = Math.max(
+    ...uniqueData.map((item: { depth: any }) => item.depth || 0)
+  );
 
-    // 一番左のノードを取得
-    const leftMostNode = nodes.reduce((prev, curr) => {
-      return prev.position.x < curr.position.x ? prev : curr;
-    });
+  for (let depth = 0; depth <= maxDepth; depth++) {
+    // その階層のノードたちを取得
+    const nodesAtDepth = nodes.filter((node) => node.data.depth === depth);
 
-    // 一番右のノードを取得
-    const rightMostNode = nodes.reduce((prev, curr) => {
-      return prev.position.x > curr.position.x ? prev : curr;
-    });
-
-    // 一番最初のノードを中央に配置
-    firstNode.position.x =
-      (leftMostNode.position.x + rightMostNode.position.x) / 2 -
-      firstNode.position.x / 2;
-  } else {
-    console.warn("No nodes created, cannot adjust first node position");
+    if (depth === 0) {
+      // ルートノードは画面中央に配置
+      if (nodesAtDepth.length > 0) {
+        nodesAtDepth[0].position.x = 0;
+        nodesAtDepth[0].position.y = 0;
+      }
+    } else {
+      // 子ノードたちを親ノードの中央に配置
+      adjustChildNodesPosition(nodesAtDepth, nodes, edges);
+    }
   }
 
   // VueFlowデータを保存
@@ -327,9 +345,7 @@ export async function generateVueFlowData(allData: any) {
     metadata: {
       totalNodes: nodes.length,
       totalEdges: edges.length,
-      maxDepth: Math.max(
-        ...uniqueData.map((item: { depth: any }) => item.depth || 0)
-      ),
+      maxDepth,
     },
   };
 
@@ -342,4 +358,48 @@ export async function generateVueFlowData(allData: any) {
     `VueFlow data generated: ${nodes.length} nodes, ${edges.length} edges`
   );
   return vueFlowData;
+}
+
+function adjustChildNodesPosition(
+  childNodes: VueFlowNode[],
+  allNodes: VueFlowNode[],
+  edges: VueFlowEdge[]
+) {
+  // 親ノード別に子ノードをグループ化
+  const parentGroups = new Map<string, VueFlowNode[]>();
+
+  childNodes.forEach((childNode) => {
+    // この子ノードの親を見つける
+    const parentEdge = edges.find((edge) => edge.target === childNode.id);
+    if (parentEdge) {
+      const parentNode = allNodes.find((node) => node.id === parentEdge.source);
+      if (parentNode) {
+        const parentId = parentNode.id;
+        if (!parentGroups.has(parentId)) {
+          parentGroups.set(parentId, []);
+        }
+        parentGroups.get(parentId)!.push(childNode);
+      }
+    }
+  });
+
+  // 各親ノードの子ノードたちを中央配置
+  parentGroups.forEach((children, parentId) => {
+    const parentNode = allNodes.find((node) => node.id === parentId);
+    if (!parentNode) return;
+
+    const nodeWidth = 250; // ノードの幅を想定
+    const spacing = 350; // ノード間のスペース
+
+    // 子ノードの総幅を計算
+    const totalWidth = (children.length - 1) * spacing;
+
+    // 親ノードの中央を基準とした開始位置
+    const startX = parentNode.position.x - totalWidth / 2;
+
+    // 子ノードを配置
+    children.forEach((childNode, index) => {
+      childNode.position.x = startX + index * spacing;
+    });
+  });
 }
