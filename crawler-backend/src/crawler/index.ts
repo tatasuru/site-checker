@@ -265,10 +265,10 @@ export async function generateVueFlowData(allData: any) {
 
       const node: VueFlowNode = {
         id: nodeId,
-        type: "default",
+        type: "custom",
         position: {
-          x: (item.depth || 0) * 300,
-          y: index * 80,
+          x: index * 350,
+          y: (item.depth || 0) * 300,
         },
         data: {
           label: item.title || "No Title",
@@ -293,11 +293,34 @@ export async function generateVueFlowData(allData: any) {
         id: `edge-${parentNode.id}-${currentNode.id}`,
         source: parentNode.id,
         target: currentNode.id,
-        type: "default",
+        type: "custom",
       });
     }
   });
 
+  // 一番最初の親nodeのpositionを調整
+  if (nodes.length > 0) {
+    const firstNode = nodes[0];
+
+    // 一番左のノードを取得
+    const leftMostNode = nodes.reduce((prev, curr) => {
+      return prev.position.x < curr.position.x ? prev : curr;
+    });
+
+    // 一番右のノードを取得
+    const rightMostNode = nodes.reduce((prev, curr) => {
+      return prev.position.x > curr.position.x ? prev : curr;
+    });
+
+    // 一番最初のノードを中央に配置
+    firstNode.position.x =
+      (leftMostNode.position.x + rightMostNode.position.x) / 2 -
+      firstNode.position.x / 2;
+  } else {
+    console.warn("No nodes created, cannot adjust first node position");
+  }
+
+  // VueFlowデータを保存
   const vueFlowData = {
     nodes,
     edges,

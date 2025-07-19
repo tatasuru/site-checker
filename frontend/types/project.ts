@@ -1,3 +1,5 @@
+import type { Node, Edge } from "@vue-flow/core";
+
 interface BaseProject {
   id: string;
   user_id: string;
@@ -10,21 +12,27 @@ interface BaseProject {
   updated_at: string;
 }
 
+export interface CrawlResult {
+  id: string;
+  site_url: string;
+  status: "waiting" | "in_progress" | "completed" | "failed";
+  total_pages: number;
+  successful_pages: number;
+  failed_pages: number;
+  started_at: string;
+  // sitemap_data: {
+  //   nodes: Node[];
+  //   edges: Edge[];
+  // };
+  sitemap_data: string;
+  completed_at: string | null;
+}
+
 // projects
 export interface MyProjects extends BaseProject {
   latest_crawl_result_id?: string;
-
   // from crawl_results
-  crawl_results?: {
-    id: string;
-    site_url: string;
-    status: "waiting" | "in_progress" | "completed" | "failed";
-    total_pages: number;
-    successful_pages: number;
-    failed_pages: number;
-    started_at: string;
-    completed_at: string | null;
-  }[];
+  crawl_results?: CrawlResult[];
 }
 
 // project_overview

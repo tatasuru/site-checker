@@ -55,7 +55,7 @@ router.addDefaultHandler(async ({ request, page, enqueueLinks, log }) => {
 
   // 基本情報を取得
   const title = await page.title();
-  const url = response?.url() || urlForNavigation;
+  const url = response?.url().replace(/\/$/, "") || urlForNavigation;
   // レスポンスで帰ってきた生のHTMLを取得
   // TODO: ここでのrawHtmlはjsなどが実行される前の状態のHTML
   // TODO: ここでのjs実行後のHTMLを取得する方法はawait response?.text()だが、これを使うとページの読み込みが完了するまで待機してしまう

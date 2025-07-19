@@ -400,7 +400,7 @@ function handleTabChange(value: "overview" | "quality" | "settings") {
         <!-- ボタンも条件付きで表示 -->
         <Button v-if="!isLoading && myProject" as-child variant="main">
           <NuxtLink
-            :to="`/sites/${route.params.id}/sitemap`"
+            :to="`/projects/${route.params.id}/sitemap`"
             class="flex w-fit items-center gap-2"
           >
             サイトマップを見る

@@ -99,6 +99,7 @@ server.post("/create-crawl-data", async (request, reply) => {
           successful_pages: 0,
           failed_pages: 0,
           is_latest: true,
+          sitemap_data: null,
           started_at: new Date().toISOString(),
         },
       ])

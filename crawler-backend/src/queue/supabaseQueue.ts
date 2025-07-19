@@ -222,8 +222,7 @@ class SupabaseQueue extends EventEmitter {
           is_latest: true,
           completed_at: new Date().toISOString(),
           // TODO: ここで生成したデータを保存する
-          // crawl_data: JSON.stringify(allData),
-          // sitemap_data: JSON.stringify(vueFlowData),
+          sitemap_data: JSON.stringify(vueFlowData),
         })
         .eq("id", job.crawl_results_id)
         .select();
