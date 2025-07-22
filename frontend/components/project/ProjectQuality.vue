@@ -703,7 +703,7 @@ function selectDialogContent(id: string) {
                     </div>
                     <Badge
                       v-if="item.pageUrl"
-                      class="bg-primary/50 absolute bottom-4 left-4 rounded-xs text-white"
+                      class="bg-primary/50 absolute right-4 bottom-4 left-4 block max-w-11/12 truncate rounded-xs text-white"
                     >
                       {{ item.pageUrl }}
                     </Badge>

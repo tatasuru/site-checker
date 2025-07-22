@@ -227,7 +227,7 @@ async function manualMerge() {
 /************************************
  * 3. VueFlowデータ生成する関数
  *************************************/
-//TODO: 理解が半分しかできてないので、後でリファクタリングする
+//TODO: 後でリファクタリングする
 export async function generateVueFlowData(allData: any) {
   const nodes: VueFlowNode[] = [];
   const edges: VueFlowEdge[] = [];
@@ -384,7 +384,30 @@ function adjustChildNodesPosition(
     }
   });
 
-  // 各親ノードの子ノードたちを中央配置
+  // TODO: わからん。子ノードが被らないように位置調整する
+  // 1.子ノードの個数によっては親ノードの位置を調整
+  parentGroups.forEach((children, parentId) => {
+    // console.log("children", children);
+    console.log("parentId", parentId);
+
+    // idがnode-0のノードはルートノードなので、位置調整は不要
+    if (parentId === "node-0") return;
+
+    const parentNode = allNodes.find((node) => node.id === parentId);
+    if (!parentNode) return;
+
+    const childCount = children.length;
+    const totalWidth = (childCount - 1) * 250; // 子ノードの幅を250pxと仮定
+    if (childCount > 0) {
+      // 子ノードが存在する場合、親ノードのx位置を調整
+      parentNode.position.x = children[0].position.x - totalWidth / 2 + 125; // 125は子ノードの中央位置
+    } else {
+      // 子ノードが存在しない場合、親ノードの位置をそのままにする
+      console.log(`No children for parent node ${parentId}`);
+    }
+  });
+
+  // 2.各親ノードの子ノードたちを中央配置
   parentGroups.forEach((children, parentId) => {
     const parentNode = allNodes.find((node) => node.id === parentId);
     if (!parentNode) return;
