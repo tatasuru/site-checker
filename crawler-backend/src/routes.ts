@@ -119,7 +119,8 @@ router.addDefaultHandler(async ({ request, page, enqueueLinks, log }) => {
   const userId = request.userData.userId;
   const projectId = request.userData.projectId;
   await enqueueLinks({
-    strategy: "same-domain",
+    // https://crawlee.dev/js/api/core/enum/EnqueueStrategy
+    strategy: "same-hostname", //same-hostname or same-domain
     exclude: [/\.(pdf|jpg|png|gif)$/i],
     userData: { userId, projectId, crawlResultsId }, // クロール結果IDを渡す
   });

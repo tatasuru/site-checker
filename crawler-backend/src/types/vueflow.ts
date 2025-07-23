@@ -10,6 +10,7 @@ export interface VueFlowNode {
     url: string;
     title: string;
     depth: number;
+    isIntermediate: boolean;
   };
 }
 export interface VueFlowEdge {
