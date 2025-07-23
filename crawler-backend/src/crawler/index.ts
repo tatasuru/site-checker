@@ -170,7 +170,7 @@ export async function mergeDatasetFiles() {
       JSON.stringify(sortedAllDataByDepth, null, 2)
     );
 
-    return allData.items;
+    return sortedAllDataByDepth;
   } catch (error) {
     console.error("Error merging dataset:", error);
 
@@ -269,27 +269,16 @@ export async function generateVueFlowData(allData: any) {
     } duplicates)`
   );
 
-  // 各深さでのインデックスを管理するMapを用意
-  const depthIndexMap = new Map<number, number>();
-
-  // まず全ノードを作成（位置調整前）
+  // まず全ノードを作成（仮の位置で）
   uniqueData.forEach(
     (item: { depth: number; title: string; url: string }, index: number) => {
       const nodeId = `node-${index}`;
       const currentDepth = item.depth || 0;
 
-      // その深さでのインデックスを取得・更新
-      const depthIndex = depthIndexMap.get(currentDepth) || 0;
-      depthIndexMap.set(currentDepth, depthIndex + 1);
-
-      // nodeを作成（仮の位置で）
       const node: VueFlowNode = {
         id: nodeId,
         type: "custom",
-        position: {
-          x: depthIndex * 350, // 同じ深さ内での横方向位置
-          y: currentDepth * 300, // 深さによる縦方向位置
-        },
+        position: { x: 0, y: 0 }, // 仮の位置
         data: {
           label: item.title || "No Title",
           url: item.url,
@@ -318,26 +307,12 @@ export async function generateVueFlowData(allData: any) {
     }
   });
 
-  // 位置調整：深さごとに親ノードの中央に配置
+  // 位置調整
+  adjustNodesPosition(nodes, edges);
+
   const maxDepth = Math.max(
-    ...uniqueData.map((item: { depth: any }) => item.depth || 0)
+    ...uniqueData.map((item: { depth: number }) => item.depth || 0)
   );
-
-  for (let depth = 0; depth <= maxDepth; depth++) {
-    // その階層のノードたちを取得
-    const nodesAtDepth = nodes.filter((node) => node.data.depth === depth);
-
-    if (depth === 0) {
-      // ルートノードは画面中央に配置
-      if (nodesAtDepth.length > 0) {
-        nodesAtDepth[0].position.x = 0;
-        nodesAtDepth[0].position.y = 0;
-      }
-    } else {
-      // 子ノードたちを親ノードの中央に配置
-      adjustChildNodesPosition(nodesAtDepth, nodes, edges);
-    }
-  }
 
   // VueFlowデータを保存
   const vueFlowData = {
@@ -361,69 +336,135 @@ export async function generateVueFlowData(allData: any) {
   return vueFlowData;
 }
 
-function adjustChildNodesPosition(
-  childNodes: VueFlowNode[],
-  allNodes: VueFlowNode[],
-  edges: VueFlowEdge[]
-) {
-  // 親ノード別に子ノードをグループ化
-  const parentGroups = new Map<string, VueFlowNode[]>();
+// ノードの位置を調整する関数
+function adjustNodesPosition(nodes: VueFlowNode[], edges: VueFlowEdge[]) {
+  const nodeWidth = 250;
+  const nodeSpacing = 50;
+  const levelSpacing = 300;
 
-  childNodes.forEach((childNode) => {
-    // この子ノードの親を見つける
-    const parentEdge = edges.find((edge) => edge.target === childNode.id);
-    if (parentEdge) {
-      const parentNode = allNodes.find((node) => node.id === parentEdge.source);
-      if (parentNode) {
-        const parentId = parentNode.id;
-        if (!parentGroups.has(parentId)) {
-          parentGroups.set(parentId, []);
-        }
-        parentGroups.get(parentId)!.push(childNode);
-      }
+  // 親子関係をマップ化
+  const parentChildrenMap = new Map<string, string[]>();
+  const childParentMap = new Map<string, string>();
+
+  edges.forEach((edge) => {
+    const parentId = edge.source;
+    const childId = edge.target;
+
+    if (!parentChildrenMap.has(parentId)) {
+      parentChildrenMap.set(parentId, []);
     }
+    parentChildrenMap.get(parentId)!.push(childId);
+    childParentMap.set(childId, parentId);
   });
 
-  // TODO: わからん。子ノードが被らないように位置調整する
-  // 1.子ノードの個数によっては親ノードの位置を調整
-  parentGroups.forEach((children, parentId) => {
-    // console.log("children", children);
-    console.log("parentId", parentId);
+  // ルートノードを見つける
+  const rootNodes = nodes.filter((node) => !childParentMap.has(node.id));
+  console.log(`Root nodes found: ${rootNodes}`);
 
-    // idがnode-0のノードはルートノードなので、位置調整は不要
-    if (parentId === "node-0") return;
+  // 各ノードの必要幅を再帰的に計算
+  function calculateRequiredWidth(nodeId: string): number {
+    const children = parentChildrenMap.get(nodeId) || [];
 
-    const parentNode = allNodes.find((node) => node.id === parentId);
-    if (!parentNode) return;
-
-    const childCount = children.length;
-    const totalWidth = (childCount - 1) * 250; // 子ノードの幅を250pxと仮定
-    if (childCount > 0) {
-      // 子ノードが存在する場合、親ノードのx位置を調整
-      parentNode.position.x = children[0].position.x - totalWidth / 2 + 125; // 125は子ノードの中央位置
-    } else {
-      // 子ノードが存在しない場合、親ノードの位置をそのままにする
-      console.log(`No children for parent node ${parentId}`);
+    if (children.length === 0) {
+      return nodeWidth;
     }
+
+    const childrenWidths = children.map((childId) =>
+      calculateRequiredWidth(childId)
+    );
+    const totalChildrenWidth =
+      childrenWidths.reduce((sum, width) => sum + width, 0) +
+      (children.length - 1) * nodeSpacing;
+
+    return Math.max(nodeWidth, totalChildrenWidth);
+  }
+
+  // 各ノードの必要幅を計算
+  const nodeRequiredWidths = new Map<string, number>();
+  nodes.forEach((node) => {
+    nodeRequiredWidths.set(node.id, calculateRequiredWidth(node.id));
   });
 
-  // 2.各親ノードの子ノードたちを中央配置
-  parentGroups.forEach((children, parentId) => {
-    const parentNode = allNodes.find((node) => node.id === parentId);
-    if (!parentNode) return;
+  console.log(
+    `Node widths calculated: ${Array.from(nodeRequiredWidths.entries())}`
+  );
 
-    const nodeWidth = 250; // ノードの幅を想定
-    const spacing = 350; // ノード間のスペース
+  // ルートノードの位置を計算（横一列に配置）
+  let rootStartX = 0;
+
+  // 全ルートノードの総幅を計算
+  const totalRootWidth =
+    rootNodes.reduce((sum, node) => {
+      return sum + nodeRequiredWidths.get(node.id)!;
+    }, 0) +
+    (rootNodes.length - 1) * nodeSpacing;
+
+  // ルートノードを中央配置
+  rootStartX = -totalRootWidth / 2;
+
+  // 再帰的にノードの位置を設定
+  function positionNode(
+    nodeId: string,
+    parentX: number,
+    depth: number
+  ): number {
+    const node = nodes.find((n) => n.id === nodeId)!;
+    const children = parentChildrenMap.get(nodeId) || [];
+    const requiredWidth = nodeRequiredWidths.get(nodeId)!;
+
+    if (children.length === 0) {
+      // 葉ノードの場合
+      node.position.x = parentX;
+      node.position.y = depth * levelSpacing;
+      return requiredWidth;
+    }
+
+    // 子ノードがある場合
+    const childNodes = children.map(
+      (childId) => nodes.find((n) => n.id === childId)!
+    );
 
     // 子ノードの総幅を計算
-    const totalWidth = (children.length - 1) * spacing;
+    const childrenTotalWidth =
+      children.reduce((sum, childId) => {
+        return sum + nodeRequiredWidths.get(childId)!;
+      }, 0) +
+      (children.length - 1) * nodeSpacing;
 
-    // 親ノードの中央を基準とした開始位置
-    const startX = parentNode.position.x - totalWidth / 2;
+    // 子ノードの配置開始位置（親の中央を基準に）
+    let childStartX = parentX - childrenTotalWidth / 2;
 
-    // 子ノードを配置
-    children.forEach((childNode, index) => {
-      childNode.position.x = startX + index * spacing;
+    // 各子ノードを配置
+    children.forEach((childId) => {
+      const childWidth = positionNode(
+        childId,
+        childStartX + nodeRequiredWidths.get(childId)! / 2,
+        depth + 1
+      );
+      childStartX += childWidth + nodeSpacing;
     });
+
+    // 親ノードを配置（子ノードの中央）
+    node.position.x = parentX;
+    node.position.y = depth * levelSpacing;
+
+    return requiredWidth;
+  }
+
+  // 各ルートノードを配置
+  let currentRootX = rootStartX;
+  rootNodes.forEach((rootNode) => {
+    const rootWidth = nodeRequiredWidths.get(rootNode.id)!;
+    positionNode(rootNode.id, currentRootX + rootWidth / 2, 0);
+    currentRootX += rootWidth + nodeSpacing;
   });
+
+  // 全体を正の座標に移動
+  const minX = Math.min(...nodes.map((node) => node.position.x));
+  if (minX < 0) {
+    const offset = -minX + nodeSpacing;
+    nodes.forEach((node) => {
+      node.position.x += offset;
+    });
+  }
 }

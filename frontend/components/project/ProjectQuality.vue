@@ -909,7 +909,9 @@ function selectDialogContent(id: string) {
 }
 
 .dark .large-donut,
-.dark .small-donut {
+.dark .small-donut,
+.dark .medium-donut {
   --vis-donut-central-label-text-color: #fff;
+  --vis-donut-central-sub-label-text-color: #fff;
 }
 </style>
