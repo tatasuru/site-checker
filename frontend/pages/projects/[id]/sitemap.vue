@@ -116,6 +116,7 @@ onMounted(async () => {
       </NuxtLink>
     </Button>
 
+    <!--  TODO: Canvasでやってみるのはいかが？ -->
     <ClientOnly>
       <VueFlow
         :nodes="nodes"

@@ -461,6 +461,7 @@ async function manualMerge() {
 /************************************
  * 3. VueFlowデータ生成する関数（修正版）
  *************************************/
+// TODO: Canvasでやってみるのはいかが？
 export async function generateVueFlowData(allData: any) {
   const nodes: VueFlowNode[] = [];
   const edges: VueFlowEdge[] = [];
