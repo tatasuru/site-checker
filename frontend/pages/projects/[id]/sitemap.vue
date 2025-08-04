@@ -304,7 +304,7 @@ function drawSitemap(ctx: CanvasRenderingContext2D) {
 
     // Node background
     ctx.fillStyle = isIntermediate ? "#f3f4f6" : "#ffffff";
-    ctx.strokeStyle = isSelected ? "#3b82f6" : "#e5e7eb";
+    ctx.strokeStyle = isSelected ? "#4bba54" : "#e5e7eb";
     ctx.lineWidth = isSelected ? 3 : 1;
 
     // Draw rounded rectangle for node background
