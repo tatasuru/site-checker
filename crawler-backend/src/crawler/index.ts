@@ -1,4 +1,4 @@
-import { PlaywrightCrawler, Configuration } from "crawlee";
+import { PlaywrightCrawler, CheerioCrawler, Configuration } from "crawlee";
 import { router } from "../routes.ts";
 import { Dataset } from "crawlee";
 import fs from "fs/promises";
@@ -78,26 +78,25 @@ export async function executeCrawler(
 
   // TODO: ここのsessionPoolOptionsは50くらいいけるはずだけど、、、、
   // cheerioに切り替えてもいいかも。
-  const crawler = new PlaywrightCrawler(
+  const crawler = new CheerioCrawler(
     {
       requestHandler: router,
       maxRequestsPerCrawl: Number(maxPages) || 20,
-      headless: true, // ヘッドレスモードで実行
       maxRequestRetries: 2, // リトライ回数
-      maxConcurrency: 4, // 同時実行数を4に設定
+      maxConcurrency: 50, // 同時実行数（CheerioはPlaywrightより軽量なので増加）
       useSessionPool: true, // セッションプールを使用
       requestHandlerTimeoutSecs: 60, // リクエストハンドラーのタイムアウト
       minConcurrency: 1, // 最小同時実行数を1に設定
       sessionPoolOptions: {
-        maxPoolSize: 4, // 4つのブラウザのみで並列処理
+        maxPoolSize: 50, // セッションプール最大サイズ
         sessionOptions: {
           maxUsageCount: 100, // セッションの最大使用回数
           maxErrorScore: 5, // エラー許容度
         },
       },
       autoscaledPoolOptions: {
-        minConcurrency: 1, // 最小同時実行数を1に設定
-        maxConcurrency: 4, // 最大同時実行数を4に設定
+        minConcurrency: 1, // 最小同時実行数
+        maxConcurrency: 50, // 最大同時実行数（軽量なので増加）
         systemStatusOptions: {
           maxEventLoopOverloadedRatio: 0.4,
           maxCpuOverloadedRatio: 0.4,
