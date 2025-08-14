@@ -316,17 +316,15 @@ function drawSitemap(ctx: CanvasRenderingContext2D) {
     ctx.stroke();
   });
 
-  // Draw nodes
-  nodes.value.forEach((node) => {
-    const nodeWidth = 250;
-    const nodeHeight = 50;
+  // Draw nodes - optimized with viewport filtering
+  const nodeWidth = 250;
+  const nodeHeight = 50;
+  
+  const visibleNodes = nodes.value.filter((node) => 
+    isInViewport(node.position.x, node.position.y, nodeWidth, nodeHeight)
+  );
 
-    // Skip rendering if node is outside viewport
-    if (
-      !isInViewport(node.position.x, node.position.y, nodeWidth, nodeHeight)
-    ) {
-      return;
-    }
+  visibleNodes.forEach((node) => {
     const isSelected = selectedNode.value?.id === node.id;
     const isIntermediate = node.data.isIntermediate;
 
@@ -429,18 +427,8 @@ function drawSitemap(ctx: CanvasRenderingContext2D) {
     }
   });
 
-  // Draw connection dots
-  nodes.value.forEach((node) => {
-    const nodeWidth = 250;
-    const nodeHeight = 50;
-
-    // Skip rendering if node is outside viewport
-    if (
-      !isInViewport(node.position.x, node.position.y, nodeWidth, nodeHeight)
-    ) {
-      return;
-    }
-
+  // Draw connection dots - optimized with same visible nodes
+  visibleNodes.forEach((node) => {
     // Check if node has outgoing edges (source)
     const hasOutgoingEdge = edges.value.some((edge) => edge.source === node.id);
 
