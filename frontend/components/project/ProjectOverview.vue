@@ -171,20 +171,20 @@ const color = (d: number, i: number) => {
               </VisSingleContainer>
 
               <div class="flex w-full flex-col items-start gap-2">
-                <div class="flex flex-col gap-1">
+                <div class="flex flex-col gap-1 pb-4">
                   <p class="text-base font-semibold">総合評価</p>
                   <span class="text-muted-foreground text-sm">
                     全項目のチェック結果をもとに総合的な評価を表示します。
                   </span>
                 </div>
-                <Button
+                <!-- <Button
                   @click="handleTabChange('quality')"
                   variant="link"
                   class="text-green p-0"
                 >
                   詳細を確認する
                   <Icon name="mdi-arrow-right" />
-                </Button>
+                </Button> -->
               </div>
             </CardContent>
           </Card>

@@ -34,6 +34,10 @@ const viewport = reactive({
   maxScale: 3,
 });
 
+// Performance optimization state
+const nodeMap = ref<Map<string, Node>>(new Map());
+let animationId: number | null = null;
+
 // Interaction state
 const interaction = reactive({
   isDragging: false,
@@ -108,8 +112,13 @@ onMounted(async () => {
         myProjectCrawlResults.value.sitemap_data || "{}",
       );
 
-      nodes.value = parseSitemapData.nodes;
-      edges.value = parseSitemapData.edges;
+      nodes.value = parseSitemapData.nodes || [];
+      edges.value = parseSitemapData.edges || [];
+
+      console.log('Loaded nodes:', nodes.value.length, 'edges:', edges.value.length);
+
+      // Create nodeMap for O(1) lookups
+      nodeMap.value = new Map(nodes.value.map((node) => [node.id, node]));
 
       // Canvas初期位置の設定
       if (nodes.value.length > 0) {
@@ -228,7 +237,20 @@ function isInViewport(
   );
 }
 
+// Performance optimized drawing with requestAnimationFrame
+function scheduleRedraw() {
+  if (animationId !== null) return;
+  animationId = requestAnimationFrame(() => {
+    if (!canvas.value) return;
+    const ctx = canvas.value.getContext("2d");
+    if (ctx) drawSitemap(ctx);
+    animationId = null;
+  });
+}
+
 function drawSitemap(ctx: CanvasRenderingContext2D) {
+  console.log('Drawing sitemap - nodes:', nodes.value.length, 'edges:', edges.value.length, 'viewport:', viewport);
+  
   ctx.clearRect(
     0,
     0,
@@ -240,54 +262,58 @@ function drawSitemap(ctx: CanvasRenderingContext2D) {
   ctx.translate(viewport.x * viewport.scale, viewport.y * viewport.scale);
   ctx.scale(viewport.scale, viewport.scale);
 
-  // Draw edges first
-  edges.value.forEach((edge) => {
-    const sourceNode = nodes.value.find((n) => n.id === edge.source);
-    const targetNode = nodes.value.find((n) => n.id === edge.target);
+  // Draw edges first - optimized with viewport filtering and fast lookups
+  const visibleEdges = edges.value.filter((edge) => {
+    const sourceNode = nodeMap.value.get(edge.source);
+    const targetNode = nodeMap.value.get(edge.target);
 
-    if (sourceNode && targetNode) {
-      // Calculate edge bounds for viewport culling
-      const minX = Math.min(sourceNode.position.x, targetNode.position.x);
-      const maxX = Math.max(
-        sourceNode.position.x + 250,
-        targetNode.position.x + 250,
-      );
-      const minY = Math.min(sourceNode.position.y, targetNode.position.y);
-      const maxY = Math.max(
-        sourceNode.position.y + 50,
-        targetNode.position.y + 50,
-      );
+    if (!sourceNode || !targetNode) return false;
 
-      // Skip rendering if edge is outside viewport
-      if (!isInViewport(minX, minY, maxX - minX, maxY - minY)) {
-        return;
-      }
-      ctx.strokeStyle = "#d1d5db";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      const startX = sourceNode.position.x + 125;
-      const startY = sourceNode.position.y + 50;
-      const endX = targetNode.position.x + 125;
-      const endY = targetNode.position.y;
+    // Calculate edge bounds for viewport culling
+    const minX = Math.min(sourceNode.position.x, targetNode.position.x);
+    const maxX = Math.max(
+      sourceNode.position.x + 250,
+      targetNode.position.x + 250,
+    );
+    const minY = Math.min(sourceNode.position.y, targetNode.position.y);
+    const maxY = Math.max(
+      sourceNode.position.y + 50,
+      targetNode.position.y + 50,
+    );
 
-      // Calculate control points for smooth curve
+    return isInViewport(minX, minY, maxX - minX, maxY - minY);
+  });
+
+  visibleEdges.forEach((edge) => {
+    const sourceNode = nodeMap.value.get(edge.source)!;
+    const targetNode = nodeMap.value.get(edge.target)!;
+
+    ctx.strokeStyle = "#d1d5db";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+
+    const startX = sourceNode.position.x + 125;
+    const startY = sourceNode.position.y + 50;
+    const endX = targetNode.position.x + 125;
+    const endY = targetNode.position.y;
+
+    // LOD: Use simple lines for small scale, bezier curves for larger scale
+    if (viewport.scale < 0.5) {
+      // Simple line for better performance at small scales
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
+    } else {
+      // Smooth bezier curve for detailed view
       const distance = Math.abs(endY - startY);
       const controlOffset = Math.min(distance * 0.6, 80);
-
       const controlY1 = startY + controlOffset;
       const controlY2 = endY - controlOffset;
 
       ctx.moveTo(startX, startY);
-      ctx.bezierCurveTo(
-        startX,
-        controlY1, // First control point
-        endX,
-        controlY2, // Second control point
-        endX,
-        endY, // End point
-      );
-      ctx.stroke();
+      ctx.bezierCurveTo(startX, controlY1, endX, controlY2, endX, endY);
     }
+
+    ctx.stroke();
   });
 
   // Draw nodes
@@ -508,8 +534,7 @@ function handleMouseDown(event: MouseEvent) {
   interaction.hasActuallyDragged = false;
 
   if (!canvas.value) return;
-  const ctx = canvas.value.getContext("2d");
-  if (ctx) drawSitemap(ctx);
+  scheduleRedraw();
 }
 
 function handleMouseMove(event: MouseEvent) {
@@ -539,15 +564,11 @@ function handleMouseMove(event: MouseEvent) {
   }
 
   if (!canvas.value) return;
-  const ctx = canvas.value.getContext("2d");
-  if (ctx) drawSitemap(ctx);
+  scheduleRedraw();
 }
 
-function handleMouseUp(event: MouseEvent) {
+function handleMouseUp() {
   if (interaction.isNodeDragging && selectedNode.value) {
-    const pos = getMousePos(event);
-    const worldPos = getScreenToWorld(pos.x, pos.y);
-
     // Node selection (no URL navigation)
   }
 
@@ -577,9 +598,7 @@ function handleWheel(event: WheelEvent) {
     viewport.x += worldPosAfter.x - worldPosBefore.x;
     viewport.y += worldPosAfter.y - worldPosBefore.y;
 
-    const ctx = canvas.value.getContext("2d");
-    //TODO: 毎回描画しないと動かない。requestAnimationFrameを使用してパフォーマンスを向上させることもできます。
-    if (ctx) drawSitemap(ctx);
+    scheduleRedraw();
   }
 }
 
@@ -632,8 +651,7 @@ function handleTouchStart(event: TouchEvent) {
   }
 
   if (!canvas.value) return;
-  const ctx = canvas.value.getContext("2d");
-  if (ctx) drawSitemap(ctx);
+  scheduleRedraw();
 }
 
 function handleTouchMove(event: TouchEvent) {
@@ -690,8 +708,7 @@ function handleTouchMove(event: TouchEvent) {
   }
 
   if (!canvas.value) return;
-  const ctx = canvas.value.getContext("2d");
-  if (ctx) drawSitemap(ctx);
+  scheduleRedraw();
 }
 
 function handleTouchEnd(event: TouchEvent) {
@@ -727,7 +744,7 @@ function handleResize() {
   canvas.value.style.width = rect.width + "px";
   canvas.value.style.height = rect.height + "px";
 
-  drawSitemap(ctx);
+  scheduleRedraw();
 }
 
 // Zoom control functions
@@ -745,8 +762,7 @@ function zoomIn() {
     viewport.x += worldPosAfter.x - worldPosBefore.x;
     viewport.y += worldPosAfter.y - worldPosBefore.y;
 
-    const ctx = canvas.value.getContext("2d");
-    if (ctx) drawSitemap(ctx);
+    scheduleRedraw();
   }
 }
 
@@ -764,8 +780,7 @@ function zoomOut() {
     viewport.x += worldPosAfter.x - worldPosBefore.x;
     viewport.y += worldPosAfter.y - worldPosBefore.y;
 
-    const ctx = canvas.value.getContext("2d");
-    if (ctx) drawSitemap(ctx);
+    scheduleRedraw();
   }
 }
 
@@ -778,8 +793,7 @@ function resetView() {
   viewport.y = -(firstNode.position.y - 300);
   viewport.scale = 0.8;
 
-  const ctx = canvas.value.getContext("2d");
-  if (ctx) drawSitemap(ctx);
+  scheduleRedraw();
 }
 
 onUnmounted(() => {
