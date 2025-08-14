@@ -1,4 +1,6 @@
 <script setup lang="ts">
+// https://developer.mozilla.org/ja/docs/Web/API/Window/requestAnimationFrame ⇦ パフォーマンス向上のためにrequestAnimationFrameを使用
+// 表示領域だけを描画することでパフォーマンスを向上させる
 import { ref, reactive } from "vue";
 import type { Node, Edge } from "@vue-flow/core";
 import type { CrawlResult, MyProjects } from "@/types/project";
@@ -576,6 +578,7 @@ function handleWheel(event: WheelEvent) {
     viewport.y += worldPosAfter.y - worldPosBefore.y;
 
     const ctx = canvas.value.getContext("2d");
+    //TODO: 毎回描画しないと動かない。requestAnimationFrameを使用してパフォーマンスを向上させることもできます。
     if (ctx) drawSitemap(ctx);
   }
 }
