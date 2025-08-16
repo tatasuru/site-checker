@@ -791,7 +791,12 @@ function selectDialogContent(id: string) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              <template v-if="table.getRowModel().rows?.length">
+              <template
+                v-if="
+                  table.getRowModel().rows?.length &&
+                  myProjectSeoCheckResults?.checked_at
+                "
+              >
                 <template v-for="row in table.getRowModel().rows" :key="row.id">
                   <TableRow :data-state="row.getIsSelected() && 'selected'">
                     <TableCell
@@ -823,7 +828,10 @@ function selectDialogContent(id: string) {
 
         <!-- pagination -->
         <div class="flex items-center justify-end space-x-2 py-4">
-          <div class="text-muted-foreground flex-1 text-sm">
+          <div
+            v-if="myProjectSeoCheckResults?.checked_at"
+            class="text-muted-foreground flex-1 text-sm"
+          >
             {{ table.getFilteredSelectedRowModel().rows.length }} /
             {{ table.getFilteredRowModel().rows.length }} 件選択
           </div>

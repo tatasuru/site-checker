@@ -39,6 +39,16 @@ async function deleteProject(id: string) {
   try {
     isDeleting.value = true;
 
+    // 段階的削除: 1. crawl_dataを分割して削除
+    console.log("crawl_dataの削除を開始します...");
+    await deleteCrawlDataInBatches(id);
+
+    // 2. 関連テーブルを削除
+    console.log("関連データの削除を開始します...");
+    await deleteRelatedData(id);
+
+    // 3. 最後にprojectsテーブルから削除
+    console.log("プロジェクトの削除を開始します...");
     const { error } = await supabase
       .from("projects")
       .delete()
@@ -56,6 +66,74 @@ async function deleteProject(id: string) {
   } finally {
     isDeleting.value = false;
   }
+}
+
+async function deleteCrawlDataInBatches(projectId: string) {
+  const batchSize = 100;
+  let deletedCount = 0;
+
+  while (true) {
+    // プロジェクトに紐づくcrawl_results_idを取得
+    const { data: crawlResults, error: crawlResultsError } = await supabase
+      .from("crawl_results")
+      .select("id")
+      .eq("project_id", projectId);
+
+    if (crawlResultsError) throw crawlResultsError;
+    if (!crawlResults || crawlResults.length === 0) break;
+
+    const crawlResultIds = crawlResults.map((r: any) => r.id);
+
+    // crawl_dataをバッチ削除
+    const { data: crawlDataBatch, error: fetchError } = await supabase
+      .from("crawl_data")
+      .select("id")
+      .in("crawl_results_id", crawlResultIds)
+      .limit(batchSize);
+
+    if (fetchError) throw fetchError;
+    if (!crawlDataBatch || crawlDataBatch.length === 0) break;
+
+    const idsToDelete = crawlDataBatch.map((item: any) => item.id);
+    const { error: deleteError } = await supabase
+      .from("crawl_data")
+      .delete()
+      .in("id", idsToDelete);
+
+    if (deleteError) throw deleteError;
+
+    deletedCount += crawlDataBatch.length;
+    console.log(`crawl_data ${deletedCount}件削除完了`);
+
+    // APIレート制限対策
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+}
+
+async function deleteRelatedData(projectId: string) {
+  // seo_check_jobsを削除
+  const { error: seoJobsError } = await supabase
+    .from("seo_check_jobs")
+    .delete()
+    .eq("project_id", projectId);
+
+  if (seoJobsError) throw seoJobsError;
+
+  // crawl_jobsを削除
+  const { error: crawlJobsError } = await supabase
+    .from("crawl_jobs")
+    .delete()
+    .eq("project_id", projectId);
+
+  if (crawlJobsError) throw crawlJobsError;
+
+  // crawl_resultsを削除
+  const { error: crawlResultsError } = await supabase
+    .from("crawl_results")
+    .delete()
+    .eq("project_id", projectId);
+
+  if (crawlResultsError) throw crawlResultsError;
 }
 </script>
 
