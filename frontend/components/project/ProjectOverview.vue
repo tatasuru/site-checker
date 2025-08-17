@@ -154,7 +154,7 @@ const color = (d: number, i: number) => {
     <div class="flex w-full gap-6">
       <div class="flex w-full items-start gap-4">
         <ClientOnly>
-          <Card class="h-fit min-w-[420px] py-2">
+          <Card class="sticky top-12 h-fit min-w-[420px] py-2">
             <CardContent class="flex flex-col items-center gap-4 px-8">
               <VisSingleContainer
                 :data="totalPieScores"
@@ -171,20 +171,12 @@ const color = (d: number, i: number) => {
               </VisSingleContainer>
 
               <div class="flex w-full flex-col items-start gap-2">
-                <div class="flex flex-col gap-1 pb-4">
+                <div class="flex flex-col gap-1 pb-3.5">
                   <p class="text-base font-semibold">総合評価</p>
                   <span class="text-muted-foreground text-sm">
                     全項目のチェック結果をもとに総合的な評価を表示します。
                   </span>
                 </div>
-                <!-- <Button
-                  @click="handleTabChange('quality')"
-                  variant="link"
-                  class="text-green p-0"
-                >
-                  詳細を確認する
-                  <Icon name="mdi-arrow-right" />
-                </Button> -->
               </div>
             </CardContent>
           </Card>
@@ -212,7 +204,7 @@ const color = (d: number, i: number) => {
 
                 <div class="flex flex-col items-start gap-4">
                   <div class="flex flex-col gap-1">
-                    <p class="text-sm font-semibold">SEOチェック結果</p>
+                    <p class="text-sm font-semibold">SEOチェック</p>
                     <span class="text-muted-foreground text-xs">
                       SEOに関するチェック結果の概要
                     </span>
@@ -221,6 +213,223 @@ const color = (d: number, i: number) => {
                     @click="handleTabChange('quality')"
                     variant="link"
                     class="text-green size-fit p-0 text-xs"
+                  >
+                    詳細を確認する
+                    <Icon name="mdi-arrow-right" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </ClientOnly>
+          <ClientOnly>
+            <Card class="relative py-3">
+              <div
+                class="bg-muted/80 text-muted-foreground absolute inset-0 z-20 flex flex-col items-center justify-center rounded-xl font-bold"
+              >
+                <Icon name="mdi:lock" class="!size-6" />
+                coming soon
+              </div>
+              <CardContent class="flex items-center gap-4 px-6">
+                <VisSingleContainer
+                  :data="pieScores"
+                  class="small-donut !h-20 !w-20"
+                >
+                  <VisDonut
+                    :value="0"
+                    :cornerRadius="2"
+                    :color="color"
+                    :arcWidth="5"
+                    :radius="40"
+                    :centralLabel="'---'"
+                  />
+                </VisSingleContainer>
+
+                <div class="flex flex-col items-start gap-4">
+                  <div class="flex flex-col gap-1">
+                    <p class="text-sm font-semibold">パフォーマンスチェック</p>
+                    <span class="text-muted-foreground text-xs">
+                      パフォーマンスに関するチェック結果の概要
+                    </span>
+                  </div>
+                  <Button
+                    @click="handleTabChange('quality')"
+                    variant="link"
+                    class="text-green size-fit p-0 text-xs"
+                    :disabled="true"
+                  >
+                    詳細を確認する
+                    <Icon name="mdi-arrow-right" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </ClientOnly>
+          <ClientOnly>
+            <Card class="relative py-3">
+              <div
+                class="bg-muted/80 text-muted-foreground absolute inset-0 z-20 flex flex-col items-center justify-center rounded-xl font-bold"
+              >
+                <Icon name="mdi:lock" class="!size-6" />
+                coming soon
+              </div>
+              <CardContent class="flex items-center gap-4 px-6">
+                <VisSingleContainer
+                  :data="pieScores"
+                  class="small-donut !h-20 !w-20"
+                >
+                  <VisDonut
+                    :value="0"
+                    :cornerRadius="2"
+                    :color="color"
+                    :arcWidth="5"
+                    :radius="40"
+                    :centralLabel="'---'"
+                  />
+                </VisSingleContainer>
+
+                <div class="flex flex-col items-start gap-4">
+                  <div class="flex flex-col gap-1">
+                    <p class="text-sm font-semibold">
+                      アクセシビリティチェック
+                    </p>
+                    <span class="text-muted-foreground text-xs">
+                      アクセシビリティに関するチェック結果の概要
+                    </span>
+                  </div>
+                  <Button
+                    @click="handleTabChange('quality')"
+                    variant="link"
+                    class="text-green size-fit p-0 text-xs"
+                    :disabled="true"
+                  >
+                    詳細を確認する
+                    <Icon name="mdi-arrow-right" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </ClientOnly>
+          <ClientOnly>
+            <Card class="relative py-3">
+              <div
+                class="bg-muted/80 text-muted-foreground absolute inset-0 z-20 flex flex-col items-center justify-center rounded-xl font-bold"
+              >
+                <Icon name="mdi:lock" class="!size-6" />
+                coming soon
+              </div>
+              <CardContent class="flex items-center gap-4 px-6">
+                <VisSingleContainer
+                  :data="pieScores"
+                  class="small-donut !h-20 !w-20"
+                >
+                  <VisDonut
+                    :value="0"
+                    :cornerRadius="2"
+                    :color="color"
+                    :arcWidth="5"
+                    :radius="40"
+                    :centralLabel="'---'"
+                  />
+                </VisSingleContainer>
+
+                <div class="flex flex-col items-start gap-4">
+                  <div class="flex flex-col gap-1">
+                    <p class="text-sm font-semibold">セキュリティチェック</p>
+                    <span class="text-muted-foreground text-xs">
+                      セキュリティに関するチェック結果の概要
+                    </span>
+                  </div>
+                  <Button
+                    @click="handleTabChange('quality')"
+                    variant="link"
+                    class="text-green size-fit p-0 text-xs"
+                    :disabled="true"
+                  >
+                    詳細を確認する
+                    <Icon name="mdi-arrow-right" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </ClientOnly>
+          <ClientOnly>
+            <Card class="relative py-3">
+              <div
+                class="bg-muted/80 text-muted-foreground absolute inset-0 z-20 flex flex-col items-center justify-center rounded-xl font-bold"
+              >
+                <Icon name="mdi:lock" class="!size-6" />
+                coming soon
+              </div>
+              <CardContent class="flex items-center gap-4 px-6">
+                <VisSingleContainer
+                  :data="pieScores"
+                  class="small-donut !h-20 !w-20"
+                >
+                  <VisDonut
+                    :value="0"
+                    :cornerRadius="2"
+                    :color="color"
+                    :arcWidth="5"
+                    :radius="40"
+                    :centralLabel="'---'"
+                  />
+                </VisSingleContainer>
+
+                <div class="flex flex-col items-start gap-4">
+                  <div class="flex flex-col gap-1">
+                    <p class="text-sm font-semibold">セキュリティチェック</p>
+                    <span class="text-muted-foreground text-xs">
+                      セキュリティに関するチェック結果の概要
+                    </span>
+                  </div>
+                  <Button
+                    @click="handleTabChange('quality')"
+                    variant="link"
+                    class="text-green size-fit p-0 text-xs"
+                    :disabled="true"
+                  >
+                    詳細を確認する
+                    <Icon name="mdi-arrow-right" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </ClientOnly>
+          <ClientOnly>
+            <Card class="relative py-3">
+              <div
+                class="bg-muted/80 text-muted-foreground absolute inset-0 z-20 flex flex-col items-center justify-center rounded-xl font-bold"
+              >
+                <Icon name="mdi:lock" class="!size-6" />
+                coming soon
+              </div>
+              <CardContent class="flex items-center gap-4 px-6">
+                <VisSingleContainer
+                  :data="pieScores"
+                  class="small-donut !h-20 !w-20"
+                >
+                  <VisDonut
+                    :value="0"
+                    :cornerRadius="2"
+                    :color="color"
+                    :arcWidth="5"
+                    :radius="40"
+                    :centralLabel="'---'"
+                  />
+                </VisSingleContainer>
+
+                <div class="flex flex-col items-start gap-4">
+                  <div class="flex flex-col gap-1">
+                    <p class="text-sm font-semibold">コード品質チェック</p>
+                    <span class="text-muted-foreground text-xs">
+                      コード品質に関するチェック結果の概要
+                    </span>
+                  </div>
+                  <Button
+                    @click="handleTabChange('quality')"
+                    variant="link"
+                    class="text-green size-fit p-0 text-xs"
+                    :disabled="true"
                   >
                     詳細を確認する
                     <Icon name="mdi-arrow-right" />
