@@ -115,7 +115,12 @@ onMounted(async () => {
       nodes.value = parseSitemapData.nodes || [];
       edges.value = parseSitemapData.edges || [];
 
-      console.log('Loaded nodes:', nodes.value.length, 'edges:', edges.value.length);
+      console.log(
+        "Loaded nodes:",
+        nodes.value.length,
+        "edges:",
+        edges.value.length,
+      );
 
       // Create nodeMap for O(1) lookups
       nodeMap.value = new Map(nodes.value.map((node) => [node.id, node]));
@@ -249,8 +254,15 @@ function scheduleRedraw() {
 }
 
 function drawSitemap(ctx: CanvasRenderingContext2D) {
-  console.log('Drawing sitemap - nodes:', nodes.value.length, 'edges:', edges.value.length, 'viewport:', viewport);
-  
+  console.log(
+    "Drawing sitemap - nodes:",
+    nodes.value.length,
+    "edges:",
+    edges.value.length,
+    "viewport:",
+    viewport,
+  );
+
   ctx.clearRect(
     0,
     0,
@@ -319,9 +331,9 @@ function drawSitemap(ctx: CanvasRenderingContext2D) {
   // Draw nodes - optimized with viewport filtering
   const nodeWidth = 250;
   const nodeHeight = 50;
-  
-  const visibleNodes = nodes.value.filter((node) => 
-    isInViewport(node.position.x, node.position.y, nodeWidth, nodeHeight)
+
+  const visibleNodes = nodes.value.filter((node) =>
+    isInViewport(node.position.x, node.position.y, nodeWidth, nodeHeight),
   );
 
   visibleNodes.forEach((node) => {
