@@ -17,6 +17,8 @@ const route = useRoute();
 const supabase = useSupabaseClient();
 const myProject = ref<MyProjects | null>(null);
 const myProjectCrawlResults = ref<CrawlResult | null>(null);
+const searchQuery = ref<string>("");
+const isSearchBoxOpen = ref<boolean>(false);
 const isLoading = ref<boolean>(true);
 const store = useSidebarStore();
 
@@ -114,13 +116,6 @@ onMounted(async () => {
 
       nodes.value = parseSitemapData.nodes || [];
       edges.value = parseSitemapData.edges || [];
-
-      console.log(
-        "Loaded nodes:",
-        nodes.value.length,
-        "edges:",
-        edges.value.length,
-      );
 
       // Create nodeMap for O(1) lookups
       nodeMap.value = new Map(nodes.value.map((node) => [node.id, node]));
@@ -796,6 +791,27 @@ function resetView() {
   scheduleRedraw();
 }
 
+function filterPages(searchStr: string) {
+  if (!canvas.value) return;
+
+  const searchResults = nodes.value.find(
+    (node) => node.data.title === searchStr,
+  );
+
+  if (searchResults) {
+    const firstNode = searchResults;
+    const canvasWidth = canvasContainer.value?.clientWidth || 800;
+    viewport.x = -firstNode.position.x + canvasWidth / 2;
+    viewport.y = -(firstNode.position.y - 300);
+    viewport.scale = 0.8;
+
+    // searchQueryがnodeのtitleと一致する時nodeを選択状態にする
+    selectedNode.value = firstNode;
+
+    scheduleRedraw();
+  }
+}
+
 onUnmounted(() => {
   window.removeEventListener("resize", handleResize);
 });
@@ -851,25 +867,63 @@ onUnmounted(() => {
           <Skeleton class="h-6 w-64" />
           <Skeleton class="h-3 w-48" />
         </div>
-        <div v-else class="flex flex-col gap-2">
+        <div v-else class="flex flex-col gap-1">
           <h3 class="text-lg font-semibold">
             {{ myProject?.name || "プロジェクトが見つかりません" }}
           </h3>
           <p class="text-muted-foreground text-sm">
             {{ myProject?.description || "プロジェクトの説明がありません" }}
+            <span class="text-muted-foreground text-xs">
+              ({{ nodes.length }} ページ)
+            </span>
           </p>
-          <div
-            class="text-muted-foreground mt-2 flex items-center gap-2 text-xs"
-          >
-            <span>ページ数: {{ nodes.length }}</span>
-            <span>•</span>
-            <span>ズーム: {{ Math.round(viewport.scale * 100) }}%</span>
-          </div>
         </div>
+      </div>
+
+      <!-- search input -->
+      <div
+        v-if="!isLoading && isSearchBoxOpen"
+        class="border-border bg-background/90 absolute top-4 right-4 z-10 flex h-48 w-[300px] flex-col gap-1 rounded-lg border p-2 shadow-lg backdrop-blur-sm"
+      >
+        <Command>
+          <CommandInput placeholder="ページタイトルで検索..." />
+          <CommandList>
+            <CommandEmpty>検索結果がありません</CommandEmpty>
+            <CommandGroup heading="ページタイトル">
+              <CommandItem
+                v-for="value in nodes"
+                :key="value.id"
+                :value="value.id"
+                class="cursor-pointer"
+                @select="
+                  searchQuery = value.data.title;
+                  filterPages(value.data.title);
+                  isSearchBoxOpen = false;
+                "
+              >
+                {{ value.data.title }}
+              </CommandItem>
+            </CommandGroup>
+          </CommandList>
+        </Command>
       </div>
 
       <!-- Zoom Controls -->
       <div class="absolute right-4 bottom-4 flex flex-col gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          class="bg-background/90 h-10 w-10 p-0 backdrop-blur-sm"
+          @click="isSearchBoxOpen = !isSearchBoxOpen"
+          :class="
+            isSearchBoxOpen
+              ? 'border-green text-green hover:text-green focus:text-green hover:bg-green/10'
+              : ''
+          "
+          :disabled="viewport.scale >= viewport.maxScale"
+        >
+          <Icon name="solar:magnifer-linear" class="h-4 w-4" />
+        </Button>
         <Button
           size="sm"
           variant="outline"
@@ -900,7 +954,7 @@ onUnmounted(() => {
 
       <!-- Selected Node Info -->
       <div
-        v-if="selectedNode"
+        v-if="selectedNode && !isSearchBoxOpen"
         class="bg-background/95 border-border absolute top-4 right-4 flex w-fit min-w-[300px] items-start justify-between gap-4 rounded-lg border p-4 shadow-lg backdrop-blur-sm"
       >
         <div class="w-full">
@@ -937,7 +991,7 @@ onUnmounted(() => {
 
       <!-- Instructions -->
       <div
-        class="bg-background/90 border-border text-muted-foreground absolute bottom-4 left-4 rounded-lg border p-3 text-xs backdrop-blur-sm"
+        class="bg-background/90 border-border text-muted-foreground absolute bottom-4 left-4 rounded-lg border p-3 text-xs shadow-lg backdrop-blur-sm"
       >
         <div class="flex flex-col gap-1">
           <div class="flex items-center gap-2">

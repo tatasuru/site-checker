@@ -310,20 +310,32 @@ const table = useVueTable({
  * for seo check result donut
  ****************************/
 const pieScores = computed(() => {
-  if (!props.myProjectSeoCheckResults) return [0, 0];
+  if (
+    !props.myProjectSeoCheckResults ||
+    !props.myProjectSeoCheckResults?.checked_at
+  )
+    return [0, 0];
   const score = props.myProjectSeoCheckResults.meta_score || 0;
   return [score, 100 - score];
 });
 const value = (d: number) => d;
 const color = (d: number, i: number) => {
-  if (!props.myProjectSeoCheckResults) return ["#4bba54", "#d5d8d5"][i];
+  if (
+    !props.myProjectSeoCheckResults ||
+    !props.myProjectSeoCheckResults?.checked_at
+  )
+    return ["#4bba54", "#d5d8d5"][i];
   const score = props.myProjectSeoCheckResults.meta_score || 0;
   if (score >= 80) return ["#4bba54", "#d5d8d5"][i]; // green
   if (score >= 50) return ["#f0ad4e", "#d5d8d5"][i]; // yellow
   return ["#d9534f", "#d5d8d5"][i]; // red
 };
 const pieSubLabel = computed(() => {
-  if (!props.myProjectSeoCheckResults) return "全体のスコア";
+  if (
+    !props.myProjectSeoCheckResults ||
+    !props.myProjectSeoCheckResults?.checked_at
+  )
+    return "全体のスコア";
   const score = props.myProjectSeoCheckResults.meta_score || 0;
 
   if (score >= 80) return "素晴らしい！";
@@ -455,8 +467,6 @@ function selectDialogContent(id: string) {
   const selectedContent = props.myProjectSeoMetaDetails?.find(
     (item) => item.id === id,
   );
-
-  console.log("Selected Content:", selectedContent);
 
   isDialogOpen.value = true;
 
