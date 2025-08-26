@@ -40,30 +40,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/components/ui/accordion";
-import { Card, CardHeader, CardFooter } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
@@ -703,7 +679,7 @@ function selectDialogContent(id: string) {
                     </div>
                     <Badge
                       v-if="item.pageUrl"
-                      class="bg-primary/50 absolute right-4 bottom-4 left-4 block max-w-11/12 truncate rounded-xs text-white"
+                      class="bg-primary/50 dark:bg-muted-foreground absolute right-4 bottom-4 left-4 block max-w-11/12 truncate rounded-xs text-white dark:text-white"
                     >
                       {{ item.pageUrl }}
                     </Badge>

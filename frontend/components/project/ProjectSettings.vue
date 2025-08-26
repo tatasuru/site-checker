@@ -150,7 +150,7 @@ async function deleteRelatedData(projectId: string) {
         v-for="menu in tabMenus"
         :key="menu.value"
         :value="menu.value"
-        class="text-green hover:bg-green/20 data-[state=active]:bg-green/20 data-[state=active]:text-green w-full flex-0 cursor-pointer justify-start rounded-[3px] bg-none shadow-none hover:shadow-none data-[state=active]:shadow-none"
+        class="text-green dark:text-green hover:bg-green/20 dark:hover:bg-green/20 data-[state=active]:bg-green/20 dark:data-[state=active]:bg-green/20 data-[state=active]:text-green dark:data-[state=active]:text-green w-full flex-0 cursor-pointer justify-start rounded-[3px] bg-none shadow-none hover:shadow-none data-[state=active]:shadow-none"
       >
         {{ menu.label }}
       </TabsTrigger>
