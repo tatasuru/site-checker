@@ -1,4 +1,4 @@
-import { PlaywrightCrawler, CheerioCrawler, Configuration } from "crawlee";
+import { PlaywrightCrawler, Configuration } from "crawlee";
 import { router } from "../routes.ts";
 import { Dataset } from "crawlee";
 import fs from "fs/promises";
@@ -78,25 +78,26 @@ export async function executeCrawler(
 
   // TODO: ここのsessionPoolOptionsは50くらいいけるはずだけど、、、、
   // cheerioに切り替えてもいいかも。
-  const crawler = new CheerioCrawler(
+  const crawler = new PlaywrightCrawler(
     {
       requestHandler: router,
       maxRequestsPerCrawl: Number(maxPages) || 20,
+      headless: true, // ヘッドレスモードで実行
       maxRequestRetries: 2, // リトライ回数
-      maxConcurrency: 50, // 同時実行数（CheerioはPlaywrightより軽量なので増加）
+      maxConcurrency: 4, // 同時実行数を4に設定
       useSessionPool: true, // セッションプールを使用
       requestHandlerTimeoutSecs: 60, // リクエストハンドラーのタイムアウト
       minConcurrency: 1, // 最小同時実行数を1に設定
       sessionPoolOptions: {
-        maxPoolSize: 50, // セッションプール最大サイズ
+        maxPoolSize: 4, // 4つのブラウザのみで並列処理
         sessionOptions: {
           maxUsageCount: 100, // セッションの最大使用回数
           maxErrorScore: 5, // エラー許容度
         },
       },
       autoscaledPoolOptions: {
-        minConcurrency: 1, // 最小同時実行数
-        maxConcurrency: 50, // 最大同時実行数（軽量なので増加）
+        minConcurrency: 1, // 最小同時実行数を1に設定
+        maxConcurrency: 4, // 最大同時実行数を4に設定
         systemStatusOptions: {
           maxEventLoopOverloadedRatio: 0.4,
           maxCpuOverloadedRatio: 0.4,
@@ -224,8 +225,243 @@ async function manualMerge() {
 }
 
 /************************************
+ * 3. VueFlowデータ生成する関数
+ *************************************/
+//TODO: 後でリファクタリングする
+// export async function generateVueFlowData(allData: any) {
+//   const nodes: VueFlowNode[] = [];
+//   const edges: VueFlowEdge[] = [];
+//   const nodeMap = new Map<string, VueFlowNode>();
+
+//   // データが空の場合の処理
+//   if (!allData || allData.length === 0) {
+//     const emptyVueFlowData = {
+//       nodes: [],
+//       edges: [],
+//       metadata: {
+//         totalNodes: 0,
+//         totalEdges: 0,
+//         maxDepth: 0,
+//       },
+//     };
+
+//     await fs.writeFile(
+//       "./storage/vueflow-data.json",
+//       JSON.stringify(emptyVueFlowData, null, 2)
+//     );
+
+//     console.log("No data to generate VueFlow data from");
+//     return emptyVueFlowData;
+//   }
+
+//   // 重複URLを除去
+//   const uniqueData = allData.reduce((acc: any[], current: { url: any }) => {
+//     const existing = acc.find((item: { url: any }) => item.url === current.url);
+//     if (!existing) {
+//       acc.push(current);
+//     }
+//     return acc;
+//   }, []);
+
+//   // まず全ノードを作成（仮の位置で）
+//   uniqueData.forEach(
+//     (item: { depth: number; title: string; url: string }, index: number) => {
+//       const nodeId = `node-${index}`;
+//       const currentDepth = item.depth || 0;
+
+//       const node: VueFlowNode = {
+//         id: nodeId,
+//         type: "custom",
+//         position: { x: 0, y: 0 }, // 仮の位置
+//         data: {
+//           label: item.title || "No Title",
+//           url: item.url,
+//           title: item.title,
+//           depth: currentDepth,
+//         },
+//       };
+
+//       nodes.push(node);
+//       nodeMap.set(item.url, node);
+//     }
+//   );
+
+//   // エッジ作成
+//   uniqueData.forEach((item: { parentUrl: string; url: string }) => {
+//     if (item.parentUrl && nodeMap.has(item.parentUrl)) {
+//       const parentNode = nodeMap.get(item.parentUrl)!;
+//       const currentNode = nodeMap.get(item.url)!;
+
+//       edges.push({
+//         id: `edge-${parentNode.id}-${currentNode.id}`,
+//         source: parentNode.id,
+//         target: currentNode.id,
+//         type: "custom",
+//       });
+//     }
+//   });
+
+//   // 位置調整
+//   adjustNodesPosition(nodes, edges);
+
+//   const maxDepth = Math.max(
+//     ...uniqueData.map((item: { depth: number }) => item.depth || 0)
+//   );
+
+//   // VueFlowデータを保存
+//   const vueFlowData = {
+//     nodes,
+//     edges,
+//     metadata: {
+//       totalNodes: nodes.length,
+//       totalEdges: edges.length,
+//       maxDepth,
+//     },
+//   };
+
+//   await fs.writeFile(
+//     "./storage/vueflow-data.json",
+//     JSON.stringify(vueFlowData, null, 2)
+//   );
+
+//   console.log(
+//     `VueFlow data generated: ${nodes.length} nodes, ${edges.length} edges`
+//   );
+//   return vueFlowData;
+// }
+
+// ノードの位置を調整する関数
+// function adjustNodesPosition(nodes: VueFlowNode[], edges: VueFlowEdge[]) {
+//   const nodeWidth = 250;
+//   const nodeSpacing = 50;
+//   const levelSpacing = 300;
+
+//   // 親子関係をマップ化
+//   const parentChildrenMap = new Map<string, string[]>();
+//   const childParentMap = new Map<string, string>();
+
+//   edges.forEach((edge) => {
+//     const parentId = edge.source;
+//     const childId = edge.target;
+
+//     if (!parentChildrenMap.has(parentId)) {
+//       parentChildrenMap.set(parentId, []);
+//     }
+//     parentChildrenMap.get(parentId)!.push(childId);
+//     childParentMap.set(childId, parentId);
+//   });
+
+//   // ルートノードを見つける
+//   const rootNodes = nodes.filter((node) => !childParentMap.has(node.id));
+
+//   // 各ノードの必要幅を再帰的に計算
+//   function calculateRequiredWidth(nodeId: string): number {
+//     const children = parentChildrenMap.get(nodeId) || [];
+
+//     if (children.length === 0) {
+//       return nodeWidth;
+//     }
+
+//     const childrenWidths = children.map((childId) =>
+//       calculateRequiredWidth(childId)
+//     );
+//     const totalChildrenWidth =
+//       childrenWidths.reduce((sum, width) => sum + width, 0) +
+//       (children.length - 1) * nodeSpacing;
+
+//     return Math.max(nodeWidth, totalChildrenWidth);
+//   }
+
+//   // 各ノードの必要幅を計算
+//   const nodeRequiredWidths = new Map<string, number>();
+//   nodes.forEach((node) => {
+//     nodeRequiredWidths.set(node.id, calculateRequiredWidth(node.id));
+//   });
+
+//   // ルートノードの位置を計算（横一列に配置）
+//   let rootStartX = 0;
+
+//   // 全ルートノードの総幅を計算
+//   const totalRootWidth =
+//     rootNodes.reduce((sum, node) => {
+//       return sum + nodeRequiredWidths.get(node.id)!;
+//     }, 0) +
+//     (rootNodes.length - 1) * nodeSpacing;
+
+//   // ルートノードを中央配置
+//   rootStartX = -totalRootWidth / 2;
+
+//   // 再帰的にノードの位置を設定
+//   function positionNode(
+//     nodeId: string,
+//     parentX: number,
+//     depth: number
+//   ): number {
+//     const node = nodes.find((n) => n.id === nodeId)!;
+//     const children = parentChildrenMap.get(nodeId) || [];
+//     const requiredWidth = nodeRequiredWidths.get(nodeId)!;
+
+//     if (children.length === 0) {
+//       // 葉ノードの場合
+//       node.position.x = parentX;
+//       node.position.y = depth * levelSpacing;
+//       return requiredWidth;
+//     }
+
+//     // 子ノードがある場合
+//     const childNodes = children.map(
+//       (childId) => nodes.find((n) => n.id === childId)!
+//     );
+
+//     // 子ノードの総幅を計算
+//     const childrenTotalWidth =
+//       children.reduce((sum, childId) => {
+//         return sum + nodeRequiredWidths.get(childId)!;
+//       }, 0) +
+//       (children.length - 1) * nodeSpacing;
+
+//     // 子ノードの配置開始位置（親の中央を基準に）
+//     let childStartX = parentX - childrenTotalWidth / 2;
+
+//     // 各子ノードを配置
+//     children.forEach((childId) => {
+//       const childWidth = positionNode(
+//         childId,
+//         childStartX + nodeRequiredWidths.get(childId)! / 2,
+//         depth + 1
+//       );
+//       childStartX += childWidth + nodeSpacing;
+//     });
+
+//     // 親ノードを配置（子ノードの中央）
+//     node.position.x = parentX;
+//     node.position.y = depth * levelSpacing;
+
+//     return requiredWidth;
+//   }
+
+//   // 各ルートノードを配置
+//   let currentRootX = rootStartX;
+//   rootNodes.forEach((rootNode) => {
+//     const rootWidth = nodeRequiredWidths.get(rootNode.id)!;
+//     positionNode(rootNode.id, currentRootX + rootWidth / 2, 0);
+//     currentRootX += rootWidth + nodeSpacing;
+//   });
+
+//   // 全体を正の座標に移動
+//   const minX = Math.min(...nodes.map((node) => node.position.x));
+//   if (minX < 0) {
+//     const offset = -minX + nodeSpacing;
+//     nodes.forEach((node) => {
+//       node.position.x += offset;
+//     });
+//   }
+// }
+
+/************************************
  * 3. VueFlowデータ生成する関数（修正版）
  *************************************/
+// TODO: Canvasでやってみるのはいかが？
 export async function generateVueFlowData(allData: any) {
   const nodes: VueFlowNode[] = [];
   const edges: VueFlowEdge[] = [];
