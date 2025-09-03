@@ -235,6 +235,7 @@ function calculateScore({
   ogTagsCheckResult,
   twitterCardsCheckResult,
   keywordsCheckResult,
+  statusCodeCheckResult,
 }: {
   titleCheckResult: TitleCheckResult;
   descriptionCheckResult: DescriptionCheckResult;
@@ -246,6 +247,7 @@ function calculateScore({
   };
   twitterCardsCheckResult: Pick<SeoCheckResult, "twitter_cards">;
   keywordsCheckResult: Pick<SeoCheckResult, "keywords">;
+  statusCodeCheckResult: Pick<SeoCheckResult, "status_code">;
 }): number {
   // 満点は100点とする
   let score = 100;
@@ -276,6 +278,12 @@ function calculateScore({
     );
     if (!hasKeywords) {
       score -= 5; // キーワードがタイトルに含まれていない場合は減点
+    }
+  }
+
+  if (statusCodeCheckResult.status_code) {
+    if (statusCodeCheckResult.status_code !== 200) {
+      score -= 10;
     }
   }
 
@@ -363,6 +371,11 @@ export async function executeSeoCheck({
       // 6. キーワードの抽出
       const keywordsCheckResult = extractKeywords(doc);
 
+      // 7. ステータスコードのチェック
+      const statusCodeCheckResult = {
+        status_code: item.statusCode || null,
+      };
+
       // 7. スコアの計算
       const score = calculateScore({
         titleCheckResult,
@@ -371,6 +384,7 @@ export async function executeSeoCheck({
         ogTagsCheckResult,
         twitterCardsCheckResult,
         keywordsCheckResult,
+        statusCodeCheckResult,
       });
 
       // 8. 結果をSupabaseに保存
