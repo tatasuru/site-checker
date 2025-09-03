@@ -132,18 +132,6 @@ async function fetchProjectDetails(id: string): Promise<MyProjects | null> {
 
     if (error) throw error;
 
-    if (!data || data.length === 0) {
-      toast.error(
-        "プロジェクトが見つかりませんでした。プロジェクト一覧に戻ります。",
-      );
-
-      setTimeout(() => {
-        navigateTo({
-          path: "/projects",
-        });
-      }, 1000);
-    }
-
     return data && data.length > 0 ? (data[0] as MyProjects) : null;
   } catch (error) {
     console.error("Error fetching project overview:", error);
