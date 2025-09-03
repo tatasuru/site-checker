@@ -17,6 +17,8 @@ const route = useRoute();
 const supabase = useSupabaseClient();
 const myProject = ref<MyProjects | null>(null);
 const myProjectCrawlResults = ref<CrawlResult | null>(null);
+const searchQuery = ref<string>("");
+const isSearchBoxOpen = ref<boolean>(false);
 const isLoading = ref<boolean>(true);
 const store = useSidebarStore();
 
@@ -33,6 +35,10 @@ const viewport = reactive({
   minScale: 0.1,
   maxScale: 3,
 });
+
+// Performance optimization state
+const nodeMap = ref<Map<string, Node>>(new Map());
+let animationId: number | null = null;
 
 // Interaction state
 const interaction = reactive({
@@ -108,8 +114,11 @@ onMounted(async () => {
         myProjectCrawlResults.value.sitemap_data || "{}",
       );
 
-      nodes.value = parseSitemapData.nodes;
-      edges.value = parseSitemapData.edges;
+      nodes.value = parseSitemapData.nodes || [];
+      edges.value = parseSitemapData.edges || [];
+
+      // Create nodeMap for O(1) lookups
+      nodeMap.value = new Map(nodes.value.map((node) => [node.id, node]));
 
       // Canvas初期位置の設定
       if (nodes.value.length > 0) {
@@ -228,7 +237,27 @@ function isInViewport(
   );
 }
 
+// Performance optimized drawing with requestAnimationFrame
+function scheduleRedraw() {
+  if (animationId !== null) return;
+  animationId = requestAnimationFrame(() => {
+    if (!canvas.value) return;
+    const ctx = canvas.value.getContext("2d");
+    if (ctx) drawSitemap(ctx);
+    animationId = null;
+  });
+}
+
 function drawSitemap(ctx: CanvasRenderingContext2D) {
+  console.log(
+    "Drawing sitemap - nodes:",
+    nodes.value.length,
+    "edges:",
+    edges.value.length,
+    "viewport:",
+    viewport,
+  );
+
   ctx.clearRect(
     0,
     0,
@@ -240,67 +269,69 @@ function drawSitemap(ctx: CanvasRenderingContext2D) {
   ctx.translate(viewport.x * viewport.scale, viewport.y * viewport.scale);
   ctx.scale(viewport.scale, viewport.scale);
 
-  // Draw edges first
-  edges.value.forEach((edge) => {
-    const sourceNode = nodes.value.find((n) => n.id === edge.source);
-    const targetNode = nodes.value.find((n) => n.id === edge.target);
+  // Draw edges first - optimized with viewport filtering and fast lookups
+  const visibleEdges = edges.value.filter((edge) => {
+    const sourceNode = nodeMap.value.get(edge.source);
+    const targetNode = nodeMap.value.get(edge.target);
 
-    if (sourceNode && targetNode) {
-      // Calculate edge bounds for viewport culling
-      const minX = Math.min(sourceNode.position.x, targetNode.position.x);
-      const maxX = Math.max(
-        sourceNode.position.x + 250,
-        targetNode.position.x + 250,
-      );
-      const minY = Math.min(sourceNode.position.y, targetNode.position.y);
-      const maxY = Math.max(
-        sourceNode.position.y + 50,
-        targetNode.position.y + 50,
-      );
+    if (!sourceNode || !targetNode) return false;
 
-      // Skip rendering if edge is outside viewport
-      if (!isInViewport(minX, minY, maxX - minX, maxY - minY)) {
-        return;
-      }
-      ctx.strokeStyle = "#d1d5db";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      const startX = sourceNode.position.x + 125;
-      const startY = sourceNode.position.y + 50;
-      const endX = targetNode.position.x + 125;
-      const endY = targetNode.position.y;
+    // Calculate edge bounds for viewport culling
+    const minX = Math.min(sourceNode.position.x, targetNode.position.x);
+    const maxX = Math.max(
+      sourceNode.position.x + 250,
+      targetNode.position.x + 250,
+    );
+    const minY = Math.min(sourceNode.position.y, targetNode.position.y);
+    const maxY = Math.max(
+      sourceNode.position.y + 50,
+      targetNode.position.y + 50,
+    );
 
-      // Calculate control points for smooth curve
+    return isInViewport(minX, minY, maxX - minX, maxY - minY);
+  });
+
+  visibleEdges.forEach((edge) => {
+    const sourceNode = nodeMap.value.get(edge.source)!;
+    const targetNode = nodeMap.value.get(edge.target)!;
+
+    ctx.strokeStyle = "#d1d5db";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+
+    const startX = sourceNode.position.x + 125;
+    const startY = sourceNode.position.y + 50;
+    const endX = targetNode.position.x + 125;
+    const endY = targetNode.position.y;
+
+    // LOD: Use simple lines for small scale, bezier curves for larger scale
+    if (viewport.scale < 0.5) {
+      // Simple line for better performance at small scales
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
+    } else {
+      // Smooth bezier curve for detailed view
       const distance = Math.abs(endY - startY);
       const controlOffset = Math.min(distance * 0.6, 80);
-
       const controlY1 = startY + controlOffset;
       const controlY2 = endY - controlOffset;
 
       ctx.moveTo(startX, startY);
-      ctx.bezierCurveTo(
-        startX,
-        controlY1, // First control point
-        endX,
-        controlY2, // Second control point
-        endX,
-        endY, // End point
-      );
-      ctx.stroke();
+      ctx.bezierCurveTo(startX, controlY1, endX, controlY2, endX, endY);
     }
+
+    ctx.stroke();
   });
 
-  // Draw nodes
-  nodes.value.forEach((node) => {
-    const nodeWidth = 250;
-    const nodeHeight = 50;
+  // Draw nodes - optimized with viewport filtering
+  const nodeWidth = 250;
+  const nodeHeight = 50;
 
-    // Skip rendering if node is outside viewport
-    if (
-      !isInViewport(node.position.x, node.position.y, nodeWidth, nodeHeight)
-    ) {
-      return;
-    }
+  const visibleNodes = nodes.value.filter((node) =>
+    isInViewport(node.position.x, node.position.y, nodeWidth, nodeHeight),
+  );
+
+  visibleNodes.forEach((node) => {
     const isSelected = selectedNode.value?.id === node.id;
     const isIntermediate = node.data.isIntermediate;
 
@@ -403,18 +434,8 @@ function drawSitemap(ctx: CanvasRenderingContext2D) {
     }
   });
 
-  // Draw connection dots
-  nodes.value.forEach((node) => {
-    const nodeWidth = 250;
-    const nodeHeight = 50;
-
-    // Skip rendering if node is outside viewport
-    if (
-      !isInViewport(node.position.x, node.position.y, nodeWidth, nodeHeight)
-    ) {
-      return;
-    }
-
+  // Draw connection dots - optimized with same visible nodes
+  visibleNodes.forEach((node) => {
     // Check if node has outgoing edges (source)
     const hasOutgoingEdge = edges.value.some((edge) => edge.source === node.id);
 
@@ -508,8 +529,7 @@ function handleMouseDown(event: MouseEvent) {
   interaction.hasActuallyDragged = false;
 
   if (!canvas.value) return;
-  const ctx = canvas.value.getContext("2d");
-  if (ctx) drawSitemap(ctx);
+  scheduleRedraw();
 }
 
 function handleMouseMove(event: MouseEvent) {
@@ -539,15 +559,11 @@ function handleMouseMove(event: MouseEvent) {
   }
 
   if (!canvas.value) return;
-  const ctx = canvas.value.getContext("2d");
-  if (ctx) drawSitemap(ctx);
+  scheduleRedraw();
 }
 
-function handleMouseUp(event: MouseEvent) {
+function handleMouseUp() {
   if (interaction.isNodeDragging && selectedNode.value) {
-    const pos = getMousePos(event);
-    const worldPos = getScreenToWorld(pos.x, pos.y);
-
     // Node selection (no URL navigation)
   }
 
@@ -577,9 +593,7 @@ function handleWheel(event: WheelEvent) {
     viewport.x += worldPosAfter.x - worldPosBefore.x;
     viewport.y += worldPosAfter.y - worldPosBefore.y;
 
-    const ctx = canvas.value.getContext("2d");
-    //TODO: 毎回描画しないと動かない。requestAnimationFrameを使用してパフォーマンスを向上させることもできます。
-    if (ctx) drawSitemap(ctx);
+    scheduleRedraw();
   }
 }
 
@@ -632,8 +646,7 @@ function handleTouchStart(event: TouchEvent) {
   }
 
   if (!canvas.value) return;
-  const ctx = canvas.value.getContext("2d");
-  if (ctx) drawSitemap(ctx);
+  scheduleRedraw();
 }
 
 function handleTouchMove(event: TouchEvent) {
@@ -690,8 +703,7 @@ function handleTouchMove(event: TouchEvent) {
   }
 
   if (!canvas.value) return;
-  const ctx = canvas.value.getContext("2d");
-  if (ctx) drawSitemap(ctx);
+  scheduleRedraw();
 }
 
 function handleTouchEnd(event: TouchEvent) {
@@ -727,7 +739,7 @@ function handleResize() {
   canvas.value.style.width = rect.width + "px";
   canvas.value.style.height = rect.height + "px";
 
-  drawSitemap(ctx);
+  scheduleRedraw();
 }
 
 // Zoom control functions
@@ -745,8 +757,7 @@ function zoomIn() {
     viewport.x += worldPosAfter.x - worldPosBefore.x;
     viewport.y += worldPosAfter.y - worldPosBefore.y;
 
-    const ctx = canvas.value.getContext("2d");
-    if (ctx) drawSitemap(ctx);
+    scheduleRedraw();
   }
 }
 
@@ -764,8 +775,7 @@ function zoomOut() {
     viewport.x += worldPosAfter.x - worldPosBefore.x;
     viewport.y += worldPosAfter.y - worldPosBefore.y;
 
-    const ctx = canvas.value.getContext("2d");
-    if (ctx) drawSitemap(ctx);
+    scheduleRedraw();
   }
 }
 
@@ -778,8 +788,28 @@ function resetView() {
   viewport.y = -(firstNode.position.y - 300);
   viewport.scale = 0.8;
 
-  const ctx = canvas.value.getContext("2d");
-  if (ctx) drawSitemap(ctx);
+  scheduleRedraw();
+}
+
+function filterPages(searchStr: string) {
+  if (!canvas.value) return;
+
+  const searchResults = nodes.value.find(
+    (node) => node.data.title === searchStr,
+  );
+
+  if (searchResults) {
+    const firstNode = searchResults;
+    const canvasWidth = canvasContainer.value?.clientWidth || 800;
+    viewport.x = -firstNode.position.x + canvasWidth / 2;
+    viewport.y = -(firstNode.position.y - 300);
+    viewport.scale = 0.8;
+
+    // searchQueryがnodeのtitleと一致する時nodeを選択状態にする
+    selectedNode.value = firstNode;
+
+    scheduleRedraw();
+  }
 }
 
 onUnmounted(() => {
@@ -837,25 +867,63 @@ onUnmounted(() => {
           <Skeleton class="h-6 w-64" />
           <Skeleton class="h-3 w-48" />
         </div>
-        <div v-else class="flex flex-col gap-2">
+        <div v-else class="flex flex-col gap-1">
           <h3 class="text-lg font-semibold">
             {{ myProject?.name || "プロジェクトが見つかりません" }}
           </h3>
           <p class="text-muted-foreground text-sm">
             {{ myProject?.description || "プロジェクトの説明がありません" }}
+            <span class="text-muted-foreground text-xs">
+              ({{ nodes.length }} ページ)
+            </span>
           </p>
-          <div
-            class="text-muted-foreground mt-2 flex items-center gap-2 text-xs"
-          >
-            <span>ページ数: {{ nodes.length }}</span>
-            <span>•</span>
-            <span>ズーム: {{ Math.round(viewport.scale * 100) }}%</span>
-          </div>
         </div>
+      </div>
+
+      <!-- search input -->
+      <div
+        v-if="!isLoading && isSearchBoxOpen"
+        class="border-border bg-background/90 absolute top-4 right-4 z-10 flex h-48 w-[300px] flex-col gap-1 rounded-lg border p-2 shadow-lg backdrop-blur-sm"
+      >
+        <Command>
+          <CommandInput placeholder="ページタイトルで検索..." />
+          <CommandList>
+            <CommandEmpty>検索結果がありません</CommandEmpty>
+            <CommandGroup heading="ページタイトル">
+              <CommandItem
+                v-for="value in nodes"
+                :key="value.id"
+                :value="value.id"
+                class="cursor-pointer"
+                @select="
+                  searchQuery = value.data.title;
+                  filterPages(value.data.title);
+                  isSearchBoxOpen = false;
+                "
+              >
+                {{ value.data.title }}
+              </CommandItem>
+            </CommandGroup>
+          </CommandList>
+        </Command>
       </div>
 
       <!-- Zoom Controls -->
       <div class="absolute right-4 bottom-4 flex flex-col gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          class="bg-background/90 h-10 w-10 p-0 backdrop-blur-sm"
+          @click="isSearchBoxOpen = !isSearchBoxOpen"
+          :class="
+            isSearchBoxOpen
+              ? 'border-green text-green hover:text-green focus:text-green hover:bg-green/10'
+              : ''
+          "
+          :disabled="viewport.scale >= viewport.maxScale"
+        >
+          <Icon name="solar:magnifer-linear" class="h-4 w-4" />
+        </Button>
         <Button
           size="sm"
           variant="outline"
@@ -886,7 +954,7 @@ onUnmounted(() => {
 
       <!-- Selected Node Info -->
       <div
-        v-if="selectedNode"
+        v-if="selectedNode && !isSearchBoxOpen"
         class="bg-background/95 border-border absolute top-4 right-4 flex w-fit min-w-[300px] items-start justify-between gap-4 rounded-lg border p-4 shadow-lg backdrop-blur-sm"
       >
         <div class="w-full">
@@ -923,7 +991,7 @@ onUnmounted(() => {
 
       <!-- Instructions -->
       <div
-        class="bg-background/90 border-border text-muted-foreground absolute bottom-4 left-4 rounded-lg border p-3 text-xs backdrop-blur-sm"
+        class="bg-background/90 border-border text-muted-foreground absolute bottom-4 left-4 rounded-lg border p-3 text-xs shadow-lg backdrop-blur-sm"
       >
         <div class="flex flex-col gap-1">
           <div class="flex items-center gap-2">
