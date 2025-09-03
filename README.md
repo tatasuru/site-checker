@@ -268,7 +268,3 @@ supabase gen types typescript --project-id $(echo $SUPABASE_URL | grep -o 'https
 ## ライセンス
 
 [Your License Here]
-
-## revert
-
-ここの変更が正しく反映させるテスト。
