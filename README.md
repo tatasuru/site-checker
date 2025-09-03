@@ -269,7 +269,7 @@ supabase gen types typescript --project-id $(echo $SUPABASE_URL | grep -o 'https
 
 [Your License Here]
 
-## メモ
+## revert
 
 リバート怖いぞ！！
 追加しました。
