@@ -40,30 +40,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/components/ui/accordion";
-import { Card, CardHeader, CardFooter } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
@@ -334,20 +310,32 @@ const table = useVueTable({
  * for seo check result donut
  ****************************/
 const pieScores = computed(() => {
-  if (!props.myProjectSeoCheckResults) return [0, 0];
+  if (
+    !props.myProjectSeoCheckResults ||
+    !props.myProjectSeoCheckResults?.checked_at
+  )
+    return [0, 0];
   const score = props.myProjectSeoCheckResults.meta_score || 0;
   return [score, 100 - score];
 });
 const value = (d: number) => d;
 const color = (d: number, i: number) => {
-  if (!props.myProjectSeoCheckResults) return ["#4bba54", "#d5d8d5"][i];
+  if (
+    !props.myProjectSeoCheckResults ||
+    !props.myProjectSeoCheckResults?.checked_at
+  )
+    return ["#4bba54", "#d5d8d5"][i];
   const score = props.myProjectSeoCheckResults.meta_score || 0;
   if (score >= 80) return ["#4bba54", "#d5d8d5"][i]; // green
   if (score >= 50) return ["#f0ad4e", "#d5d8d5"][i]; // yellow
   return ["#d9534f", "#d5d8d5"][i]; // red
 };
 const pieSubLabel = computed(() => {
-  if (!props.myProjectSeoCheckResults) return "全体のスコア";
+  if (
+    !props.myProjectSeoCheckResults ||
+    !props.myProjectSeoCheckResults?.checked_at
+  )
+    return "全体のスコア";
   const score = props.myProjectSeoCheckResults.meta_score || 0;
 
   if (score >= 80) return "素晴らしい！";
@@ -479,8 +467,6 @@ function selectDialogContent(id: string) {
   const selectedContent = props.myProjectSeoMetaDetails?.find(
     (item) => item.id === id,
   );
-
-  console.log("Selected Content:", selectedContent);
 
   isDialogOpen.value = true;
 
@@ -703,7 +689,7 @@ function selectDialogContent(id: string) {
                     </div>
                     <Badge
                       v-if="item.pageUrl"
-                      class="bg-primary/50 absolute right-4 bottom-4 left-4 block max-w-11/12 truncate rounded-xs text-white"
+                      class="bg-primary/50 dark:bg-muted-foreground absolute right-4 bottom-4 left-4 block max-w-11/12 truncate rounded-xs text-white dark:text-white"
                     >
                       {{ item.pageUrl }}
                     </Badge>
@@ -791,7 +777,12 @@ function selectDialogContent(id: string) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              <template v-if="table.getRowModel().rows?.length">
+              <template
+                v-if="
+                  table.getRowModel().rows?.length &&
+                  myProjectSeoCheckResults?.checked_at
+                "
+              >
                 <template v-for="row in table.getRowModel().rows" :key="row.id">
                   <TableRow :data-state="row.getIsSelected() && 'selected'">
                     <TableCell
@@ -823,7 +814,10 @@ function selectDialogContent(id: string) {
 
         <!-- pagination -->
         <div class="flex items-center justify-end space-x-2 py-4">
-          <div class="text-muted-foreground flex-1 text-sm">
+          <div
+            v-if="myProjectSeoCheckResults?.checked_at"
+            class="text-muted-foreground flex-1 text-sm"
+          >
             {{ table.getFilteredSelectedRowModel().rows.length }} /
             {{ table.getFilteredRowModel().rows.length }} 件選択
           </div>

@@ -375,8 +375,9 @@ const onSubmit = async (values: formValues) => {
                 <Button
                   v-if="stepIndex === steps.length"
                   size="sm"
+                  :variant="'main'"
                   type="submit"
-                  class="gradient-bg cursor-pointer"
+                  class="cursor-pointer"
                   :disabled="!meta.valid || isSubmitting"
                 >
                   {{ isSubmitting ? "登録中..." : "プロジェクトを登録する" }}
