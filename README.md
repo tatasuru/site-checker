@@ -272,3 +272,4 @@ supabase gen types typescript --project-id $(echo $SUPABASE_URL | grep -o 'https
 ## メモ
 
 リバート怖いぞ！！
+追加しました。
