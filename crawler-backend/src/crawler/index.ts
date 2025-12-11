@@ -76,7 +76,6 @@ export async function executeCrawler(
     persistStorage: true, // データは保存
   });
 
-  // cheerioに切り替えてもいいかも。
   const crawler = new CheerioCrawler(
     {
       requestHandler: router,
