@@ -46,7 +46,7 @@ export async function clearStorage() {
     ];
 
     await Promise.all(
-      customFiles.map((file) => fs.unlink(file).catch(() => {}))
+      customFiles.map((file) => fs.unlink(file).catch(() => { }))
     );
 
     console.log("Storage cleared successfully (SDK state preserved)");
@@ -76,7 +76,6 @@ export async function executeCrawler(
     persistStorage: true, // データは保存
   });
 
-  // TODO: ここのsessionPoolOptionsは50くらいいけるはずだけど、、、、
   // cheerioに切り替えてもいいかも。
   const crawler = new CheerioCrawler(
     {
